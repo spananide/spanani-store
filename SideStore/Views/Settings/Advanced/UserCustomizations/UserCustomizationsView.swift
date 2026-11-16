@@ -527,7 +527,8 @@ struct UserCustomizationsView: View {
             Text(editDialog?.message ?? "")
         }
         .task {
-            isFreeAccount = (try? await AuthManager.shared.getAuthenticatedTeam())?.type == .free
+            let team: ALTTeam? = try? await AuthManager.shared.getAuthenticatedTeam()
+            isFreeAccount = team?.type == ALTTeamType.free
         }
     }
 
