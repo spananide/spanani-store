@@ -137,6 +137,22 @@ final class PairingFileManager: NSObject {
         persistedActiveProtocol = parsed.mode
     }
 
+    /// Adopts a pairing file that an installer (iloader / spanani Installer) placed in Documents.
+    @discardableResult
+    func adoptPlacedPairingFile() -> Bool {
+        if hasPairingFile() { return true }
+        for mode in [PairingProtocol.rppairing, PairingProtocol.lockdown] where hasPairingFile(for: mode) {
+            persistedActiveProtocol = mode
+            UserDefaults.standard.isPairingReset = false
+            return true
+        }
+        let legacyURL = FileManager.default.documentsDirectory.appendingPathComponent(AppConstants.Pairing.legacyPairingFileName)
+        if FileManager.default.fileExists(atPath: legacyURL.path), (try? importPairingFile(from: legacyURL)) != nil {
+            return true
+        }
+        return false
+    }
+
     func deletePairingFile(for mode: PairingProtocol) {
         let fileURL = pairingFileURL(for: mode)
         let fm = FileManager.default

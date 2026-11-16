@@ -298,7 +298,7 @@ private struct FeatureTile: View {
 
 private struct PairingFileStep: View {
     let onNext: () -> Void
-    @State private var hasPairingFile = PairingFileManager.shared.hasPairingFile()
+    @State private var hasPairingFile = PairingFileManager.shared.adoptPlacedPairingFile()
     @State private var isShowingFilePicker = false
     @State private var errorMessage: String? = nil
 
@@ -317,6 +317,10 @@ private struct PairingFileStep: View {
             Spacer()
 
             bottomButtons
+        }
+        .onAppear { hasPairingFile = PairingFileManager.shared.adoptPlacedPairingFile() }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+            hasPairingFile = PairingFileManager.shared.adoptPlacedPairingFile()
         }
         #if !os(tvOS)
         .fileImporter(
