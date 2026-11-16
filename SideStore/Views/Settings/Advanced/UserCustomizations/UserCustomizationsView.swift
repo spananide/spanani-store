@@ -77,7 +77,7 @@ struct UserCustomizationsView: View {
     @State private var editDialog: EditDialogState? = nil
     @State private var editingValueText: String = ""
 
-    var body: some View {
+    private var baseContent: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 // Section 0: APPEARANCE & THEMES
@@ -495,6 +495,11 @@ struct UserCustomizationsView: View {
                 Text("Switching to App Bundle prioritizes storage efficiency by transferring the app bundle directly without packaging a temporary IPA, but transfer speeds will be noticeably slower.")
             }
         }
+    }
+
+    // Split in two so the type checker copes with the iOS 17 modifier overloads.
+    var body: some View {
+        baseContent
         .sheet(isPresented: Binding<Bool>(
             get: { wireGuardExportURL != nil },
             set: { if !$0 { wireGuardExportURL = nil } }
@@ -527,8 +532,7 @@ struct UserCustomizationsView: View {
             Text(editDialog?.message ?? "")
         }
         .task {
-            let team: ALTTeam? = try? await AuthManager.shared.getAuthenticatedTeam()
-            isFreeAccount = team?.type == ALTTeamType.free
+            isFreeAccount = (try? await AuthManager.shared.getAuthenticatedTeam())?.type == .free
         }
     }
 
