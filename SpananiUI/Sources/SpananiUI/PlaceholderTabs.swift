@@ -149,7 +149,7 @@ struct AddSourceSheet: View {
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 20) {
-                Text("Gib die URL einer AltStore- oder SideStore-kompatiblen Quelle ein.")
+                Text("Gib die URL einer kompatiblen Quelle ein.")
                     .font(.system(size: 14))
                     .foregroundColor(.inkSoft)
 
@@ -240,14 +240,12 @@ struct AddSourceSheet: View {
 
 struct SettingsView: View {
     @EnvironmentObject private var model: StoreModel
-    @AppStorage("useClassicUI") private var useClassicUI: Bool = false
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: 24) {
                 headerSection
                 accountSection
-                interfaceSection
                 connectionSection
                 aboutSection
             }
@@ -334,35 +332,6 @@ struct SettingsView: View {
         }
     }
 
-    // MARK: - Interface Section
-
-    private var interfaceSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Oberfläche")
-                .font(.brand(16, .semibold))
-                .foregroundColor(.inkSoft)
-                .padding(.horizontal, 20)
-
-            VStack(spacing: 0) {
-                Toggle(isOn: $useClassicUI) {
-                    Text("Klassische Oberfläche verwenden (nach Neustart)")
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundColor(.ink)
-                }
-                .tint(.brand)
-                .padding(16)
-            }
-            .background(Color.paperRaised)
-            .clipShape(RoundedRectangle(cornerRadius: SpananiRadius.tile, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: SpananiRadius.tile, style: .continuous)
-                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
-            )
-            .softShadow(color: Color.black.opacity(0.10), radius: 8, x: 0, y: 3)
-            .padding(.horizontal, 20)
-        }
-    }
-
     // MARK: - Connection Section
 
     private var connectionSection: some View {
@@ -434,7 +403,7 @@ struct SettingsView: View {
                     .frame(height: 1)
                     .padding(.horizontal, 16)
 
-                settingsRow(title: "Basis", value: "SideStore (AGPL-3.0)")
+                settingsRow(title: "Lizenz", value: "Open Source (AGPL-3.0)")
 
                 Rectangle()
                     .fill(Color.paperSunk)

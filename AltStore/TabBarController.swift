@@ -51,18 +51,32 @@ final class TabBarController: UITabBarController
         self.sourcesViewController = sourcesNavigationController.viewControllers.first as? SourcesViewController
 
         #if !os(tvOS)
-        if !UserDefaults.standard.bool(forKey: "useClassicUI") {
-            SpananiFont.register()
-            let host = UIHostingController(rootView: SpananiRoot(model: SpananiBridge.shared.model))
-            host.view.backgroundColor = .clear
-            addChild(host); host.view.frame = view.bounds
-            host.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-            view.addSubview(host.view); host.didMove(toParent: self)
-            tabBar.isHidden = true
-            SpananiBridge.shared.start()
-        }
+        SpananiFont.register()
+        let host = UIHostingController(rootView: SpananiRoot(model: SpananiBridge.shared.model))
+        host.view.backgroundColor = .clear
+        addChild(host); host.view.frame = view.bounds
+        host.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        view.addSubview(host.view); host.didMove(toParent: self)
+        tabBar.isHidden = true
+        self.spananiHost = host
+        SpananiBridge.shared.start()
         #endif
     }
+
+    #if !os(tvOS)
+    private var spananiHost: UIViewController?
+
+    // The overlay can end up without the device's top/bottom safe area (content under the Dynamic Island): top it up from the window.
+    override func viewDidLayoutSubviews()
+    {
+        super.viewDidLayoutSubviews()
+        guard let host = self.spananiHost, let window = self.view.window else { return }
+        let current = host.additionalSafeAreaInsets
+        let derived = UIEdgeInsets(top: host.view.safeAreaInsets.top - current.top, left: 0, bottom: host.view.safeAreaInsets.bottom - current.bottom, right: 0)
+        let needed = UIEdgeInsets(top: max(0, window.safeAreaInsets.top - derived.top), left: 0, bottom: max(0, window.safeAreaInsets.bottom - derived.bottom), right: 0)
+        if needed != current { host.additionalSafeAreaInsets = needed }
+    }
+    #endif
     
     override func viewDidAppear(_ animated: Bool)
     {

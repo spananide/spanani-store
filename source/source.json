@@ -1,0 +1,63 @@
+{
+  "version": 2,
+  "name": "spanani",
+  "identifier": "de.spanani.store.source",
+  "sourceURL": "https://raw.githubusercontent.com/spananide/spanani-store/develop/source/source.json",
+  "apps": [
+    {
+      "name": "spanani Store",
+      "bundleIdentifier": "de.spanani.store",
+      "developerName": "spanani.de",
+      "subtitle": "Dein eigener App-Store",
+      "localizedDescription": "Der spanani Store installiert und aktualisiert Apps direkt auf deinem iPhone, ohne Computer.",
+      "iconURL": "https://raw.githubusercontent.com/spananide/spanani-store/develop/source/icons/store.png",
+      "tintColor": "9955E7",
+      "category": "utilities",
+      "version": "0.5.0",
+      "date": "2026-11-17T00:00:00Z",
+      "downloadURL": "https://github.com/spananide/spanani-store/releases/latest/download/SpananiStore.ipa",
+      "size": 30246730,
+      "versions": [
+        {
+          "version": "0.5.0",
+          "date": "2026-11-17T00:00:00Z",
+          "localizedDescription": "Neue Oberfläche, eigene Quelle.",
+          "downloadURL": "https://github.com/spananide/spanani-store/releases/latest/download/SpananiStore.ipa",
+          "size": 30246730
+        }
+      ],
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {}
+      }
+    },
+    {
+      "name": "FMHY",
+      "bundleIdentifier": "de.spanani.fmhy",
+      "developerName": "spanani.de",
+      "subtitle": "Wiki & Link-Prüfer",
+      "localizedDescription": "Die FMHY-Wiki mit Suche, Lesezeichen und Link-Prüfung.",
+      "iconURL": "https://raw.githubusercontent.com/spananide/spanani-store/develop/source/icons/fmhy.png",
+      "tintColor": "9955E7",
+      "category": "utilities",
+      "version": "1.5.1",
+      "date": "2026-11-16T00:00:00Z",
+      "downloadURL": "https://github.com/spananide/fmhy-ios/releases/download/v1.5.1/FMHY-iOS-v1.5.1.ipa",
+      "size": 4108026,
+      "versions": [
+        {
+          "version": "1.5.1",
+          "date": "2026-11-16T00:00:00Z",
+          "localizedDescription": "Leser, Download-Benachrichtigung, Vollbericht in der App.",
+          "downloadURL": "https://github.com/spananide/fmhy-ios/releases/download/v1.5.1/FMHY-iOS-v1.5.1.ipa",
+          "size": 4108026
+        }
+      ],
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {}
+      }
+    }
+  ],
+  "news": []
+}
