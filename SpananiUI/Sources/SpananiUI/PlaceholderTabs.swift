@@ -4,6 +4,7 @@ import SwiftUI
 
 struct SourcesView: View {
     @EnvironmentObject private var model: StoreModel
+    @State private var isAddSheetPresented = false
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
@@ -13,9 +14,14 @@ struct SourcesView: View {
                 addSourceRow
             }
             .padding(.top, 16)
-            .padding(.bottom, 120)
+            .padding(.bottom, 140)
         }
         .background(Color.paper)
+        .sheet(isPresented: $isAddSheetPresented) {
+            AddSourceSheet()
+                .environmentObject(model)
+                .presentationDetents([.medium])
+        }
     }
 
     private var headerSection: some View {
@@ -67,7 +73,7 @@ struct SourcesView: View {
 
             Spacer()
 
-            Text("\(source.appCount) Apps")
+            Text(source.appCount == 1 ? "1 App" : "\(source.appCount) Apps")
                 .font(.brand(12, .semibold))
                 .foregroundColor(.inkSoft)
                 .padding(.horizontal, 10)
@@ -75,9 +81,19 @@ struct SourcesView: View {
                 .background(Color.paperSunk)
                 .clipShape(Capsule())
 
-            Image(systemName: "chevron.right")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(.inkFaint)
+            Menu {
+                Button(role: .destructive) {
+                    model.removeSource(source)
+                } label: {
+                    Label("Entfernen", systemImage: "trash")
+                }
+            } label: {
+                Image(systemName: "ellipsis")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.inkSoft)
+                    .frame(width: 32, height: 32)
+                    .contentShape(Rectangle())
+            }
         }
         .padding(16)
         .background(Color.paperRaised)
@@ -92,6 +108,7 @@ struct SourcesView: View {
     private var addSourceRow: some View {
         Button {
             Haptics.impact(.medium)
+            isAddSheetPresented = true
         } label: {
             HStack(spacing: 10) {
                 Image(systemName: "plus.circle.fill")
@@ -119,21 +136,123 @@ struct SourcesView: View {
     }
 }
 
+// MARK: - AddSourceSheet
+
+struct AddSourceSheet: View {
+    @EnvironmentObject private var model: StoreModel
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var urlString: String = ""
+    @State private var errorMessage: String? = nil
+    @State private var isLoading: Bool = false
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 20) {
+                Text("Gib die URL einer AltStore- oder SideStore-kompatiblen Quelle ein.")
+                    .font(.system(size: 14))
+                    .foregroundColor(.inkSoft)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    TextField("https://beispiel.de/source.json", text: $urlString)
+                        .font(.system(size: 15))
+                        .foregroundColor(.ink)
+                        .keyboardType(.URL)
+                        .autocapitalization(.none)
+                        .autocorrectionDisabled(true)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 12)
+                        .background(Color.paperSunk)
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .stroke(errorMessage != nil ? Color.danger : Color.white.opacity(0.08), lineWidth: 1)
+                        )
+
+                    if let errorMessage = errorMessage {
+                        HStack(spacing: 6) {
+                            Image(systemName: "exclamationmark.circle.fill")
+                                .font(.system(size: 13))
+                            Text(errorMessage)
+                                .font(.system(size: 13, weight: .medium))
+                        }
+                        .foregroundColor(.danger)
+                        .padding(.horizontal, 4)
+                    }
+                }
+
+                Spacer()
+
+                Button {
+                    addSource()
+                } label: {
+                    HStack {
+                        Spacer()
+                        if isLoading {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                .padding(.trailing, 6)
+                        }
+                        Text("Hinzufügen")
+                            .font(.brand(16, .semibold))
+                            .foregroundColor(.white)
+                        Spacer()
+                    }
+                    .padding(.vertical, 14)
+                    .background(Color.brand)
+                    .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .disabled(isLoading || urlString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .opacity(urlString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.6 : 1.0)
+            }
+            .padding(20)
+            .background(Color.paper)
+            .navigationTitle("Quelle hinzufügen")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Abbrechen") {
+                        dismiss()
+                    }
+                    .foregroundColor(.brand)
+                }
+            }
+        }
+    }
+
+    private func addSource() {
+        isLoading = true
+        errorMessage = nil
+        Task {
+            do {
+                try await model.addSource(urlString)
+                dismiss()
+            } catch {
+                errorMessage = error.localizedDescription
+                isLoading = false
+            }
+        }
+    }
+}
+
 // MARK: - SettingsView
 
 struct SettingsView: View {
     @EnvironmentObject private var model: StoreModel
+    @AppStorage("useClassicUI") private var useClassicUI: Bool = false
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: 24) {
                 headerSection
                 accountSection
+                interfaceSection
                 connectionSection
                 aboutSection
             }
             .padding(.top, 16)
-            .padding(.bottom, 120)
+            .padding(.bottom, 140)
         }
         .background(Color.paper)
     }
@@ -179,6 +298,58 @@ struct SettingsView: View {
                         color: model.account.appleID != nil ? .success : .warning
                     )
                 }
+                .padding(16)
+
+                if model.account.appleID != nil {
+                    Rectangle()
+                        .fill(Color.paperSunk)
+                        .frame(height: 1)
+                        .padding(.horizontal, 16)
+
+                    Button {
+                        model.signOut()
+                    } label: {
+                        HStack {
+                            Text("Abmelden")
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundColor(.danger)
+                            Spacer()
+                            Image(systemName: "rectangle.portrait.and.arrow.right")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(.danger)
+                        }
+                        .padding(16)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .background(Color.paperRaised)
+            .clipShape(RoundedRectangle(cornerRadius: SpananiRadius.tile, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: SpananiRadius.tile, style: .continuous)
+                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
+            )
+            .softShadow(color: Color.black.opacity(0.10), radius: 8, x: 0, y: 3)
+            .padding(.horizontal, 20)
+        }
+    }
+
+    // MARK: - Interface Section
+
+    private var interfaceSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Oberfläche")
+                .font(.brand(16, .semibold))
+                .foregroundColor(.inkSoft)
+                .padding(.horizontal, 20)
+
+            VStack(spacing: 0) {
+                Toggle(isOn: $useClassicUI) {
+                    Text("Klassische Oberfläche verwenden (nach Neustart)")
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundColor(.ink)
+                }
+                .tint(.brand)
                 .padding(16)
             }
             .background(Color.paperRaised)

@@ -26,7 +26,7 @@ struct MyAppsView: View {
                 }
             }
             .padding(.top, 16)
-            .padding(.bottom, 120)
+            .padding(.bottom, 140)
         }
         .background(Color.paper)
     }
@@ -56,7 +56,9 @@ struct MyAppsView: View {
         VStack(alignment: .leading, spacing: 12) {
             SectionHeader(
                 title: "Updates",
-                subtitle: "\(appsWithUpdates.count) Aktualisierungen verfügbar"
+                subtitle: appsWithUpdates.count == 1
+                    ? "1 Aktualisierung verfügbar"
+                    : "\(appsWithUpdates.count) Aktualisierungen verfügbar"
             )
             .padding(.horizontal, 20)
 
@@ -75,7 +77,9 @@ struct MyAppsView: View {
         VStack(alignment: .leading, spacing: 12) {
             SectionHeader(
                 title: "Installiert",
-                subtitle: "\(model.installed.count) Apps auf diesem Gerät"
+                subtitle: model.installed.count == 1
+                    ? "1 App auf diesem Gerät"
+                    : "\(model.installed.count) Apps auf diesem Gerät"
             )
             .padding(.horizontal, 20)
 

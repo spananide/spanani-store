@@ -7,6 +7,8 @@
 //
 
 @preconcurrency import UIKit
+import SwiftUI
+import SpananiUI
 
 extension TabBarController
 {
@@ -47,6 +49,19 @@ final class TabBarController: UITabBarController
         
         let sourcesNavigationController = self.viewControllers![Tab.sources.rawValue] as! UINavigationController
         self.sourcesViewController = sourcesNavigationController.viewControllers.first as? SourcesViewController
+
+        #if !os(tvOS)
+        if !UserDefaults.standard.bool(forKey: "useClassicUI") {
+            SpananiFont.register()
+            let host = UIHostingController(rootView: SpananiRoot(model: SpananiBridge.shared.model))
+            host.view.backgroundColor = .clear
+            addChild(host); host.view.frame = view.bounds
+            host.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            view.addSubview(host.view); host.didMove(toParent: self)
+            tabBar.isHidden = true
+            SpananiBridge.shared.start()
+        }
+        #endif
     }
     
     override func viewDidAppear(_ animated: Bool)

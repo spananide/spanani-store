@@ -19,7 +19,7 @@ struct AppDetailView: View {
                     infoGridSection
                     permissionsSection
                 }
-                .padding(.bottom, 48)
+                .padding(.bottom, 140)
             }
 
             topCloseBar
@@ -150,11 +150,44 @@ struct AppDetailView: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 16) {
-                    ForEach(0..<5, id: \.self) { index in
-                        MockPhoneScreenView(
-                            app: app,
-                            pageIndex: index
-                        )
+                    if !app.screenshotURLs.isEmpty {
+                        ForEach(app.screenshotURLs, id: \.self) { url in
+                            AsyncImage(url: url) { phase in
+                                if let image = phase.image {
+                                    image
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                } else if phase.error != nil {
+                                    ZStack {
+                                        Color.paperRaised
+                                        Image(systemName: "photo")
+                                            .font(.system(size: 32))
+                                            .foregroundColor(.inkFaint)
+                                    }
+                                } else {
+                                    ZStack {
+                                        Color.paperRaised
+                                        ProgressView()
+                                            .progressViewStyle(CircularProgressViewStyle(tint: .brand))
+                                    }
+                                }
+                            }
+                            .frame(width: 190, height: 412)
+                            .background(Color.paperRaised)
+                            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                                    .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                            )
+                            .softShadow(color: Color.black.opacity(0.18), radius: 12, x: 0, y: 5)
+                        }
+                    } else {
+                        ForEach(0..<5, id: \.self) { index in
+                            MockPhoneScreenView(
+                                app: app,
+                                pageIndex: index
+                            )
+                        }
                     }
                 }
                 .padding(.horizontal, 20)

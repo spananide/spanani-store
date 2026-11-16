@@ -331,7 +331,7 @@ struct SlotDots: View {
                         .animation(.spring(response: 0.3), value: active)
                 }
             }
-            Text("\(active) von \(limit) Plätzen")
+            Text(limit == 1 ? "\(active) von 1 Platz" : "\(active) von \(limit) Plätzen")
                 .font(.brand(13, .semibold))
                 .foregroundColor(.inkSoft)
         }

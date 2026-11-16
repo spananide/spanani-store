@@ -1,0 +1,558 @@
+//
+//  SpananiBridge.swift
+//  AltStore
+//
+//  Created for spanani Store.
+//
+
+import CoreData
+import Foundation
+import Minimuxer
+import SideSign
+import SpananiUI
+import SwiftUI
+import UIKit
+
+private final class ProgressBox: @unchecked Sendable {
+    var observation: NSKeyValueObservation?
+}
+
+@MainActor
+final class SpananiBridge: StoreActions {
+    static let shared = SpananiBridge()
+
+    let model = StoreModel()
+
+    private var didStart = false
+    private var debounceTask: Task<Void, Never>?
+    private var notificationObservers: [NSObjectProtocol] = []
+
+    private init() {
+        model.actions = self
+    }
+
+    // MARK: - Lifecycle
+
+    func start() {
+        guard !didStart else { return }
+        didStart = true
+
+        Task { @MainActor in
+            var elapsed: Double = 0
+            while !DatabaseManager.shared.isStarted && elapsed < 60.0 {
+                try? await Task.sleep(nanoseconds: 500_000_000)
+                elapsed += 0.5
+            }
+
+            guard DatabaseManager.shared.isStarted else {
+                debugLog("[SpananiBridge] Database failed to start within 60s timeout.")
+                return
+            }
+
+            self.reloadData()
+            self.setupContextObservers()
+        }
+    }
+
+    private func setupContextObservers() {
+        let context = DatabaseManager.shared.viewContext
+
+        let observer1 = NotificationCenter.default.addObserver(
+            forName: .NSManagedObjectContextObjectsDidChange,
+            object: context,
+            queue: .main
+        ) { [weak self] _ in
+            self?.scheduleReload()
+        }
+
+        let observer2 = NotificationCenter.default.addObserver(
+            forName: .NSManagedObjectContextDidSave,
+            object: context,
+            queue: .main
+        ) { [weak self] _ in
+            self?.scheduleReload()
+        }
+
+        self.notificationObservers = [observer1, observer2]
+    }
+
+    private func scheduleReload() {
+        debounceTask?.cancel()
+        debounceTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 300_000_000)
+            guard !Task.isCancelled else { return }
+            self.reloadData()
+        }
+    }
+
+    // MARK: - Data Reload
+
+    @MainActor
+    func reloadData() {
+        let context = DatabaseManager.shared.viewContext
+
+        let storeApps = StoreApp.all(in: context)
+        let installedApps = InstalledApp.all(in: context)
+        let sources = Source.all(in: context)
+
+        // Filter out AltStore itself and sort featured / newest sensibly
+        let filteredApps = storeApps.filter { $0.bundleIdentifier != StoreApp.altstoreAppID }
+        let sortedApps = filteredApps.sorted { app1, app2 in
+            let date1 = app1.latestSupportedVersion?.date ?? app1.versionDate ?? Date.distantPast
+            let date2 = app2.latestSupportedVersion?.date ?? app2.versionDate ?? Date.distantPast
+            if date1 != date2 {
+                return date1 > date2
+            }
+            return app1.name.localizedCaseInsensitiveCompare(app2.name) == .orderedAscending
+        }
+
+        let defaultTint = UIColor(red: 0.6, green: 0.33, blue: 0.91, alpha: 1)
+
+        let mappedApps: [StoreItem] = sortedApps.enumerated().map { index, app in
+            let isFeatured = index < 4
+            let heroTagline = isFeatured ? (index % 2 == 0 ? "Neu im Store" : "Beliebt") : ""
+            let tintColor = app.tintColor ?? defaultTint
+            let versionString = app.latestSupportedVersion?.version ?? app.version ?? "—"
+            let size = app.latestSupportedVersion?.size ?? app._size
+            let whatsNew = app.latestSupportedVersion?.localizedDescription ?? app.versionDescription ?? ""
+            let permissions = Array(app.permissions).map { $0.localizedDisplayName }.sorted()
+
+            return StoreItem(
+                id: app.bundleIdentifier,
+                name: app.name,
+                subtitle: app.subtitle ?? "",
+                developer: app.developerName,
+                description: app.localizedDescription,
+                category: mapCategory(app),
+                versionString: versionString,
+                sizeBytes: size,
+                sourceName: app.source?.name ?? "SideStore",
+                tint: Color(uiColor: tintColor),
+                symbol: "app.fill",
+                iconURL: app.iconURL,
+                screenshotURLs: app.screenshotURLs,
+                whatsNew: whatsNew,
+                permissions: permissions,
+                isFeatured: isFeatured,
+                heroTagline: heroTagline
+            )
+        }
+
+        let sortedInstalled = installedApps.sorted {
+            $0.expirationDate < $1.expirationDate
+        }
+
+        let mappedInstalled: [InstalledItem] = sortedInstalled.map { app in
+            let tintColor = app.storeApp?.tintColor ?? defaultTint
+            let iconURL = app.storeApp?.iconURL
+
+            return InstalledItem(
+                id: app.bundleIdentifier,
+                name: app.name,
+                versionString: app.version,
+                tint: Color(uiColor: tintColor),
+                symbol: "app.fill",
+                iconURL: iconURL,
+                expiresAt: app.expirationDate,
+                isActive: app.isActive,
+                hasUpdate: app.hasUpdate,
+                latestVersion: app.storeApp?.latestSupportedVersion?.version
+            )
+        }
+
+        let sortedSources = sources.sorted {
+            $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+        }
+
+        let mappedSources: [SourceItem] = sortedSources.map { source in
+            let tintColor = source.effectiveTintColor ?? defaultTint
+            return SourceItem(
+                id: source.identifier,
+                name: source.name,
+                url: source.sourceURL.absoluteString,
+                appCount: source.apps.count,
+                tint: Color(uiColor: tintColor)
+            )
+        }
+
+        model.apps = mappedApps
+        model.installed = mappedInstalled
+        model.sources = mappedSources
+        model.activeLimit = InstalledApp.freeAccountActiveAppsLimit
+
+        let appleID = Keychain.shared.appleIDEmailAddress
+        let isPaired = PairingFileManager.shared.hasPairingFile()
+        let vpnOn = minimuxer.network.isUTunAvailable
+
+        model.account = AccountInfo(
+            appleID: appleID,
+            isPaired: isPaired,
+            vpnOn: vpnOn
+        )
+    }
+
+    private func mapCategory(_ app: StoreApp) -> String {
+        if let cat = app.category {
+            switch cat {
+            case .developer: return "Entwickler"
+            case .entertainment: return "Medien"
+            case .games: return "Spiele"
+            case .lifestyle: return "Lifestyle"
+            case .other: return "Sonstiges"
+            case .photoAndVideo: return "Foto & Video"
+            case .social: return "Social"
+            case .utilities: return "Werkzeuge"
+            }
+        }
+        if let raw = app._category?.lowercased() {
+            switch raw {
+            case "developer": return "Entwickler"
+            case "entertainment": return "Medien"
+            case "games": return "Spiele"
+            case "lifestyle": return "Lifestyle"
+            case "other": return "Sonstiges"
+            case "photo-video", "photovideo", "photo & video": return "Foto & Video"
+            case "social": return "Social"
+            case "utilities": return "Werkzeuge"
+            case "education": return "Lernen"
+            default: return "Sonstiges"
+            }
+        }
+        return "Sonstiges"
+    }
+
+    // MARK: - Navigation Helper
+
+    static var topViewController: UIViewController? {
+        UIApplication.shared.topViewController()
+    }
+
+    // MARK: - StoreActions Implementation
+
+    func install(_ app: StoreItem, progress: @escaping (Double) -> Void) async throws {
+        // needs proper testing on device
+        debugLog("[SpananiBridge] install() requested for: \(app.id)")
+        let context = DatabaseManager.shared.viewContext
+
+        let installedApp = InstalledApp.first(
+            satisfying: NSPredicate(format: "%K == %@", #keyPath(InstalledApp.bundleIdentifier), app.id),
+            in: context
+        )
+
+        if let installedApp = installedApp, installedApp.hasUpdate {
+            debugLog("[SpananiBridge] Existing app has update available: \(app.id)")
+            let box = ProgressBox()
+
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                let progressObj = AppManager.shared.update(
+                    installedApp,
+                    presentingViewController: Self.topViewController
+                ) { result in
+                    box.observation?.invalidate()
+                    box.observation = nil
+
+                    switch result {
+                    case .success:
+                        debugLog("[SpananiBridge] Update succeeded for: \(app.id)")
+                        continuation.resume()
+                    case .failure(let error):
+                        debugLog("[SpananiBridge] Update failed for: \(app.id), error: \(error)")
+                        continuation.resume(throwing: error)
+                    }
+                }
+
+                box.observation = progressObj.observe(\.fractionCompleted, options: [.initial, .new]) { p, _ in
+                    let frac = p.fractionCompleted
+                    Task { @MainActor in
+                        progress(frac)
+                    }
+                }
+            }
+            return
+        }
+
+        guard let storeApp = StoreApp.first(
+            satisfying: NSPredicate(format: "%K == %@", #keyPath(StoreApp.bundleIdentifier), app.id),
+            in: context
+        ) else {
+            let error = NSError(
+                domain: "SpananiBridge",
+                code: 404,
+                userInfo: [NSLocalizedDescriptionKey: "App “\(app.name)” konnte nicht im Store gefunden werden."]
+            )
+            debugLog("[SpananiBridge] StoreApp not found: \(app.id)")
+            throw error
+        }
+
+        let box = ProgressBox()
+
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            let group = AppManager.shared.install(
+                .app(storeApp),
+                presentingViewController: Self.topViewController
+            ) { result in
+                box.observation?.invalidate()
+                box.observation = nil
+
+                switch result {
+                case .success:
+                    debugLog("[SpananiBridge] Install succeeded for: \(app.id)")
+                    continuation.resume()
+                case .failure(let error):
+                    debugLog("[SpananiBridge] Install failed for: \(app.id), error: \(error)")
+                    continuation.resume(throwing: error)
+                }
+            }
+
+            box.observation = group.progress.observe(\.fractionCompleted, options: [.initial, .new]) { p, _ in
+                let frac = p.fractionCompleted
+                Task { @MainActor in
+                    progress(frac)
+                }
+            }
+        }
+    }
+
+    func refresh(_ app: InstalledItem) async throws {
+        // needs proper testing on device
+        debugLog("[SpananiBridge] refresh() requested for: \(app.id)")
+        let context = DatabaseManager.shared.viewContext
+
+        guard let installedApp = InstalledApp.first(
+            satisfying: NSPredicate(format: "%K == %@", #keyPath(InstalledApp.bundleIdentifier), app.id),
+            in: context
+        ) else {
+            let error = NSError(
+                domain: "SpananiBridge",
+                code: 404,
+                userInfo: [NSLocalizedDescriptionKey: "Installierte App “\(app.name)” wurde nicht gefunden."]
+            )
+            debugLog("[SpananiBridge] InstalledApp not found for refresh: \(app.id)")
+            throw error
+        }
+
+        let group = AppManager.shared.refresh([installedApp], presentingViewController: Self.topViewController)
+
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            group.completionHandler = { results in
+                if let result = results[installedApp.bundleIdentifier] {
+                    switch result {
+                    case .success:
+                        debugLog("[SpananiBridge] Refresh succeeded for: \(app.id)")
+                        continuation.resume()
+                    case .failure(let error):
+                        debugLog("[SpananiBridge] Refresh failed for: \(app.id), error: \(error)")
+                        continuation.resume(throwing: error)
+                    }
+                } else if let groupError = group.error {
+                    debugLog("[SpananiBridge] Refresh group error: \(groupError)")
+                    continuation.resume(throwing: groupError)
+                } else {
+                    debugLog("[SpananiBridge] Refresh completed with empty result for: \(app.id)")
+                    continuation.resume()
+                }
+            }
+        }
+    }
+
+    func refreshAll(progress: @escaping (Double) -> Void) async throws {
+        // needs proper testing on device
+        debugLog("[SpananiBridge] refreshAll() requested")
+        let context = DatabaseManager.shared.viewContext
+        let activeApps = InstalledApp.all(in: context).filter { $0.isActive }
+
+        guard !activeApps.isEmpty else {
+            debugLog("[SpananiBridge] No active apps to refresh.")
+            progress(1.0)
+            return
+        }
+
+        let group = AppManager.shared.refresh(activeApps, presentingViewController: Self.topViewController)
+        let box = ProgressBox()
+
+        box.observation = group.progress.observe(\.fractionCompleted, options: [.initial, .new]) { p, _ in
+            let frac = p.fractionCompleted
+            Task { @MainActor in
+                progress(frac)
+            }
+        }
+
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            group.completionHandler = { results in
+                box.observation?.invalidate()
+                box.observation = nil
+
+                let failures = results.compactMapValues { result -> Error? in
+                    switch result {
+                    case .failure(let error): return error
+                    case .success: return nil
+                    }
+                }
+
+                if let firstError = failures.values.first {
+                    debugLog("[SpananiBridge] refreshAll() encountered error: \(firstError)")
+                    continuation.resume(throwing: firstError)
+                } else if let groupError = group.error {
+                    debugLog("[SpananiBridge] refreshAll() group error: \(groupError)")
+                    continuation.resume(throwing: groupError)
+                } else {
+                    debugLog("[SpananiBridge] refreshAll() succeeded for \(activeApps.count) apps")
+                    continuation.resume()
+                }
+            }
+        }
+    }
+
+    func open(_ app: InstalledItem) {
+        debugLog("[SpananiBridge] open() requested for: \(app.id)")
+        let context = DatabaseManager.shared.viewContext
+
+        if let installedApp = InstalledApp.first(
+            satisfying: NSPredicate(format: "%K == %@", #keyPath(InstalledApp.bundleIdentifier), app.id),
+            in: context
+        ) {
+            UIApplication.shared.open(installedApp.openAppURL)
+        } else {
+            let openURL = InstalledApp.openAppURL(targetBundleIdentifier: app.id)
+            UIApplication.shared.open(openURL)
+        }
+    }
+
+    func deactivate(_ app: InstalledItem) async throws {
+        // needs proper testing on device
+        debugLog("[SpananiBridge] deactivate/activate toggle requested for: \(app.id)")
+        let context = DatabaseManager.shared.viewContext
+
+        guard let installedApp = InstalledApp.first(
+            satisfying: NSPredicate(format: "%K == %@", #keyPath(InstalledApp.bundleIdentifier), app.id),
+            in: context
+        ) else {
+            let error = NSError(
+                domain: "SpananiBridge",
+                code: 404,
+                userInfo: [NSLocalizedDescriptionKey: "Installierte App wurde nicht gefunden."]
+            )
+            debugLog("[SpananiBridge] App not found for deactivation: \(app.id)")
+            throw error
+        }
+
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            if installedApp.isActive {
+                AppManager.shared.deactivate(
+                    installedApp,
+                    presentingViewController: Self.topViewController
+                ) { result in
+                    switch result {
+                    case .success:
+                        debugLog("[SpananiBridge] Deactivate succeeded for: \(app.id)")
+                        continuation.resume()
+                    case .failure(let error):
+                        debugLog("[SpananiBridge] Deactivate failed for: \(app.id), error: \(error)")
+                        continuation.resume(throwing: error)
+                    }
+                }
+            } else {
+                AppManager.shared.activate(
+                    installedApp,
+                    presentingViewController: Self.topViewController
+                ) { result in
+                    switch result {
+                    case .success:
+                        debugLog("[SpananiBridge] Activate succeeded for: \(app.id)")
+                        continuation.resume()
+                    case .failure(let error):
+                        debugLog("[SpananiBridge] Activate failed for: \(app.id), error: \(error)")
+                        continuation.resume(throwing: error)
+                    }
+                }
+            }
+        }
+    }
+
+    func addSource(urlString: String) async throws {
+        debugLog("[SpananiBridge] addSource() requested with URL: \(urlString)")
+        let trimmed = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard let url = URL(string: trimmed),
+              let scheme = url.scheme,
+              ["http", "https"].contains(scheme.lowercased()) else {
+            let error = NSError(
+                domain: "SpananiBridge",
+                code: 400,
+                userInfo: [NSLocalizedDescriptionKey: "Ungültige URL. Bitte gib eine gültige HTTP- oder HTTPS-Adresse ein."]
+            )
+            debugLog("[SpananiBridge] Invalid source URL: \(urlString)")
+            throw error
+        }
+
+        let context = DatabaseManager.shared.persistentContainer.newBackgroundContext()
+        let source = try await AppManager.shared.fetchSource(sourceURL: url, managedObjectContext: context)
+
+        guard let topVC = Self.topViewController else {
+            let error = NSError(
+                domain: "SpananiBridge",
+                code: 500,
+                userInfo: [NSLocalizedDescriptionKey: "Kein aktiver View Controller zum Bestätigen verfügbar."]
+            )
+            debugLog("[SpananiBridge] No top view controller to present add source dialog.")
+            throw error
+        }
+
+        try await AppManager.shared.add(source, presentingViewController: topVC)
+        debugLog("[SpananiBridge] addSource() completed successfully for: \(urlString)")
+    }
+
+    func removeSource(_ source: SourceItem) async throws {
+        debugLog("[SpananiBridge] removeSource() requested for: \(source.id)")
+        let context = DatabaseManager.shared.viewContext
+
+        guard let sourceEntity = Source.first(
+            satisfying: NSPredicate(format: "%K == %@", #keyPath(Source.identifier), source.id),
+            in: context
+        ) else {
+            let error = NSError(
+                domain: "SpananiBridge",
+                code: 404,
+                userInfo: [NSLocalizedDescriptionKey: "Quelle “\(source.name)” wurde in der Datenbank nicht gefunden."]
+            )
+            debugLog("[SpananiBridge] Source not found for removal: \(source.id)")
+            throw error
+        }
+
+        guard let topVC = Self.topViewController else {
+            let error = NSError(
+                domain: "SpananiBridge",
+                code: 500,
+                userInfo: [NSLocalizedDescriptionKey: "Kein aktiver View Controller zum Bestätigen verfügbar."]
+            )
+            debugLog("[SpananiBridge] No top view controller to present remove source dialog.")
+            throw error
+        }
+
+        try await AppManager.shared.remove(sourceEntity, presentingViewController: topVC)
+        debugLog("[SpananiBridge] removeSource() completed successfully for: \(source.id)")
+    }
+
+    func refreshSources() async {
+        debugLog("[SpananiBridge] refreshSources() requested")
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            AppManager.shared.updateAllSources { result in
+                switch result {
+                case .success:
+                    debugLog("[SpananiBridge] updateAllSources() succeeded.")
+                case .failure(let error):
+                    debugLog("[SpananiBridge] updateAllSources() failed: \(error)")
+                }
+                continuation.resume()
+            }
+        }
+    }
+
+    func signOut() async {
+        // needs proper testing on device
+        debugLog("[SpananiBridge] signOut() requested")
+        await AuthManager.shared.signOut()
+        model.account.appleID = nil
+        debugLog("[SpananiBridge] signOut() completed")
+    }
+}

@@ -59,7 +59,10 @@ struct DiscoverView: View {
                 }
             }
             .padding(.top, 16)
-            .padding(.bottom, 120)
+            .padding(.bottom, 140)
+        }
+        .refreshable {
+            await model.reloadSources()
         }
         .background(Color.paper)
     }
@@ -137,7 +140,9 @@ struct DiscoverView: View {
         VStack(alignment: .leading, spacing: 16) {
             SectionHeader(
                 title: "Ergebnisse",
-                subtitle: "\(filteredApps.count) Apps gefunden"
+                subtitle: filteredApps.count == 1
+                    ? "1 App gefunden"
+                    : "\(filteredApps.count) Apps gefunden"
             )
             .padding(.horizontal, 20)
 
@@ -285,7 +290,9 @@ struct DiscoverView: View {
         VStack(alignment: .leading, spacing: 14) {
             SectionHeader(
                 title: "Alle Apps",
-                subtitle: "\(filteredApps.count) verfügbare Anwendungen"
+                subtitle: filteredApps.count == 1
+                    ? "1 verfügbare Anwendung"
+                    : "\(filteredApps.count) verfügbare Anwendungen"
             )
             .padding(.horizontal, 20)
 

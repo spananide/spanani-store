@@ -8,6 +8,17 @@ public protocol StoreActions: AnyObject {
     func refreshAll(progress: @escaping (Double) -> Void) async throws
     func open(_ app: InstalledItem)
     func deactivate(_ app: InstalledItem) async throws
+    func addSource(urlString: String) async throws
+    func removeSource(_ source: SourceItem) async throws
+    func refreshSources() async
+    func signOut() async
+}
+
+public extension StoreActions {
+    func addSource(urlString: String) async throws {}
+    func removeSource(_ source: SourceItem) async throws {}
+    func refreshSources() async {}
+    func signOut() async {}
 }
 
 @MainActor
@@ -231,6 +242,97 @@ public final class StoreModel: ObservableObject {
                 }
                 Haptics.notify(.success)
             }
+        }
+    }
+
+    public func addSource(_ urlString: String) {
+        Task {
+            do {
+                try await addSourceAsync(urlString)
+            } catch {
+                Haptics.notify(.error)
+            }
+        }
+    }
+
+    public func addSource(_ urlString: String) async throws {
+        try await addSourceAsync(urlString)
+    }
+
+    private func addSourceAsync(_ urlString: String) async throws {
+        Haptics.impact(.medium)
+        if let actions = self.actions {
+            try await actions.addSource(urlString: urlString)
+            Haptics.notify(.success)
+        } else {
+            let trimmed = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard let url = URL(string: trimmed), let host = url.host, !host.isEmpty else {
+                throw NSError(
+                    domain: "SpananiUI",
+                    code: 400,
+                    userInfo: [NSLocalizedDescriptionKey: "Ungültige URL. Bitte gib eine vollständige Adresse ein."]
+                )
+            }
+            try? await Task.sleep(nanoseconds: 300_000_000)
+            let newSource = SourceItem(
+                name: host.capitalized,
+                url: trimmed,
+                appCount: 0,
+                tint: .brand
+            )
+            self.sources.append(newSource)
+            Haptics.notify(.success)
+        }
+    }
+
+    public func removeSource(_ source: SourceItem) {
+        Haptics.impact(.medium)
+        Task {
+            if let actions = self.actions {
+                do {
+                    try await actions.removeSource(source)
+                    self.sources.removeAll { $0.id == source.id }
+                    Haptics.notify(.success)
+                } catch {
+                    Haptics.notify(.error)
+                }
+            } else {
+                try? await Task.sleep(nanoseconds: 200_000_000)
+                self.sources.removeAll { $0.id == source.id }
+                Haptics.notify(.success)
+            }
+        }
+    }
+
+    public func reloadSources() {
+        Task {
+            await reloadSourcesAsync()
+        }
+    }
+
+    public func reloadSources() async {
+        await reloadSourcesAsync()
+    }
+
+    private func reloadSourcesAsync() async {
+        Haptics.impact(.light)
+        if let actions = self.actions {
+            await actions.refreshSources()
+            Haptics.notify(.success)
+        } else {
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            Haptics.notify(.success)
+        }
+    }
+
+    public func signOut() {
+        Haptics.impact(.medium)
+        Task {
+            if let actions = self.actions {
+                await actions.signOut()
+            }
+            self.account.appleID = nil
+            Haptics.notify(.success)
         }
     }
 }
