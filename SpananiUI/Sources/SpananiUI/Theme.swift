@@ -22,17 +22,17 @@ extension UIColor {
 }
 
 extension Color {
-    static let paper = Color(uiColor: .adaptive(darkHex: 0x16121d, lightHex: 0xf4f2f7))
-    static let paperRaised = Color(uiColor: .adaptive(darkHex: 0x201a2a, lightHex: 0xffffff))
-    static let paperSunk = Color(uiColor: .adaptive(darkHex: 0x110e17, lightHex: 0xeae6f0))
-    static let ink = Color(uiColor: .adaptive(darkHex: 0xece8f3, lightHex: 0x1a1622))
-    static let inkSoft = Color(uiColor: .adaptive(darkHex: 0xa69fb4, lightHex: 0x5b536a))
-    static let inkFaint = Color(uiColor: .adaptive(darkHex: 0x8c849c, lightHex: 0x665e77))
+    public static let paper = Color(uiColor: .adaptive(darkHex: 0x16121d, lightHex: 0xf4f2f7))
+    public static let paperRaised = Color(uiColor: .adaptive(darkHex: 0x201a2a, lightHex: 0xffffff))
+    public static let paperSunk = Color(uiColor: .adaptive(darkHex: 0x110e17, lightHex: 0xeae6f0))
+    public static let ink = Color(uiColor: .adaptive(darkHex: 0xece8f3, lightHex: 0x1a1622))
+    public static let inkSoft = Color(uiColor: .adaptive(darkHex: 0xa69fb4, lightHex: 0x5b536a))
+    public static let inkFaint = Color(uiColor: .adaptive(darkHex: 0x8c849c, lightHex: 0x665e77))
     public static let brand = Color(uiColor: .adaptive(darkHex: 0x9955e7, lightHex: 0x9955e7))
-    static let accent = Color(uiColor: .adaptive(darkHex: 0xb892f2, lightHex: 0x661bbb))
-    static let success = Color(uiColor: .adaptive(darkHex: 0x4fd69c, lightHex: 0x0b6b4a))
-    static let danger = Color(uiColor: .adaptive(darkHex: 0xff7a88, lightHex: 0xc42b3a))
-    static let warning = Color(uiColor: .adaptive(darkHex: 0xffc65a, lightHex: 0x9a6200))
+    public static let accent = Color(uiColor: .adaptive(darkHex: 0xb892f2, lightHex: 0x661bbb))
+    public static let success = Color(uiColor: .adaptive(darkHex: 0x4fd69c, lightHex: 0x0b6b4a))
+    public static let danger = Color(uiColor: .adaptive(darkHex: 0xff7a88, lightHex: 0xc42b3a))
+    public static let warning = Color(uiColor: .adaptive(darkHex: 0xffc65a, lightHex: 0x9a6200))
 }
 
 // MARK: - Typography
@@ -58,12 +58,12 @@ public enum SpananiFont {
     }
 }
 
-enum BrandWeight {
+public enum BrandWeight {
     case regular
     case semibold
     case extrabold
 
-    var fontSuffix: String {
+    public var fontSuffix: String {
         switch self {
         case .regular:
             return "Regular"
@@ -76,17 +76,17 @@ enum BrandWeight {
 }
 
 extension Font {
-    static func brand(_ size: CGFloat, _ weight: BrandWeight = .regular) -> Font {
+    public static func brand(_ size: CGFloat, _ weight: BrandWeight = .regular) -> Font {
         .custom("BricolageGrotesque-\(weight.fontSuffix)", size: size)
     }
 }
 
 // MARK: - Dimensions
 
-enum SpananiRadius {
-    static let card: CGFloat = 28
-    static let tile: CGFloat = 20
-    static let chip: CGFloat = 100
+public enum SpananiRadius {
+    public static let card: CGFloat = 28
+    public static let tile: CGFloat = 20
+    public static let chip: CGFloat = 100
 }
 
 // MARK: - Haptics
@@ -137,8 +137,8 @@ extension View {
 
 // MARK: - Logo Resource Helper
 
-enum SpananiLogo {
-    static func markImage() -> Image {
+public enum SpananiLogo {
+    public static func markImage() -> Image {
         if let path = Bundle.module.path(forResource: "Mark", ofType: "png"),
            let uiImage = UIImage(contentsOfFile: path) {
             return Image(uiImage: uiImage).renderingMode(.template)
@@ -148,6 +148,16 @@ enum SpananiLogo {
            let uiImage = UIImage(data: data) {
             return Image(uiImage: uiImage).renderingMode(.template)
         }
-        return Image(systemName: "seal.fill").renderingMode(.template)
+        return Image("Mark", bundle: .module).renderingMode(.template)
+    }
+}
+
+public struct SpananiMark: View {
+    public init() {}
+
+    public var body: some View {
+        SpananiLogo.markImage()
+            .resizable()
+            .aspectRatio(contentMode: .fit)
     }
 }

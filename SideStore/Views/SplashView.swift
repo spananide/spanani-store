@@ -6,6 +6,7 @@
 //  Copyright © 2026 SideStore. All rights reserved.
 //
 
+import SpananiUI
 import SwiftUI
 
 @MainActor
@@ -19,50 +20,65 @@ final class SplashViewModel: ObservableObject {
 
 struct SplashView: View {
     @ObservedObject var viewModel: SplashViewModel
-    @State private var isBreathing = false
+    @State private var isPulsing = false
 
     var body: some View {
         ZStack {
             #if !os(tvOS)
-                Color(.systemBackground)
+                Color.paper
                     .ignoresSafeArea()
             #else
                 Color.black
                     .ignoresSafeArea()
             #endif
 
-            VStack(spacing: 16) {
+            VStack(spacing: 20) {
                 Spacer()
 
-                Image(uiImage: UIImage(named: "AppIcon") ?? UIImage(named: "AppIcon60x60") ?? UIImage(systemName: "app.fill")!)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 104, height: 104)
-                    .cornerRadius(24)
-                    .shadow(color: Color.black.opacity(0.15), radius: 10, x: 0, y: 5)
-                    .scaleEffect(isBreathing ? 1.05 : 1.0)
+                SpananiMark()
+                    .frame(width: 96, height: 96)
+                    .foregroundStyle(Color.brand)
+                    .shadow(color: Color.brand.opacity(0.35), radius: 18, x: 0, y: 8)
+                    .scaleEffect(isPulsing ? 1.05 : 1.0)
                     .animation(
                         .easeInOut(duration: 1.8).repeatForever(autoreverses: true),
-                        value: isBreathing
+                        value: isPulsing
                     )
-                    .onAppear {
-                        isBreathing = true
-                    }
 
-                Text(Bundle.main.infoDictionary?["CFBundleDisplayName"] as? String ?? "SideStore")
-                    .font(.system(size: 24, weight: .bold))
-                    .foregroundColor(.primary)
+                Text(NSLocalizedString("spanani Store", comment: ""))
+                    .font(.brand(28, .extrabold))
+                    .foregroundColor(.ink)
 
                 Spacer()
 
                 if !viewModel.status.isEmpty {
-                    Text(viewModel.status)
+                    Text(localizedStatus(viewModel.status))
                         .font(.system(size: 14))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.inkSoft)
                         .transition(.opacity)
                 }
             }
             .padding(.bottom, 48)
+        }
+        .onAppear {
+            // needs proper testing on physical device
+            SpananiFont.register()
+            isPulsing = true
+        }
+    }
+
+    private func localizedStatus(_ status: String) -> String {
+        switch status {
+        case "Starting…", "Starting...":
+            return NSLocalizedString("Wird gestartet…", comment: "")
+        case "Loading apps…", "Loading apps...":
+            return NSLocalizedString("Apps werden geladen…", comment: "")
+        case "Updating sources…", "Updating sources...":
+            return NSLocalizedString("Quellen werden aktualisiert…", comment: "")
+        case "Almost there…", "Almost there...":
+            return NSLocalizedString("Gleich fertig…", comment: "")
+        default:
+            return status
         }
     }
 }
