@@ -149,7 +149,7 @@ private struct AuthenticationView: View
     private var topBar: some View
     {
         HStack {
-            Button {
+            SwiftUI.Button {
                 self.viewModel.cancel()
             } label: {
                 Text("Schließen")
@@ -312,7 +312,7 @@ private struct AuthenticationView: View
 
     private var submitSection: some View
     {
-        Button {
+        SwiftUI.Button {
             self.focusedField = nil
             self.viewModel.authenticate()
         } label: {
