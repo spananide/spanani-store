@@ -42,6 +42,8 @@
 	<string>6.0</string>
 	<key>CFBundleName</key>
 	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundleDisplayName</key>
+	<string>spanani Store</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -78,8 +80,8 @@
 	</array>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
-		<string>sidestore-com.SideStore.SideStore</string>
-		<string>sidestore-com.SideStore.SideStore.Beta</string>
+		<string>sidestore-de.spanani.store</string>
+		<string>sidestore-de.spanani.store.Beta</string>
 		<string>localdevvpn</string>
 	</array>
 	<key>LSRequiresIPhoneOS</key>
@@ -172,7 +174,7 @@
 	</array>
 	<key>OSLogPreferences</key>
 	<dict>
-		<key>com.SideStore.SideStore</key>
+		<key>de.spanani.store</key>
 		<dict>
 			<key>AltJIT</key>
 			<dict>
