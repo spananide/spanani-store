@@ -7,7 +7,6 @@ enum Formatters {
         let formatter = ByteCountFormatter()
         formatter.allowedUnits = [.useMB, .useKB, .useGB]
         formatter.countStyle = .file
-        formatter.locale = Locale(identifier: "de_DE")
         return formatter.string(fromByteCount: bytes)
     }
 
