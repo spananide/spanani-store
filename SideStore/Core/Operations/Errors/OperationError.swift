@@ -108,7 +108,7 @@ public enum OperationError: LocalizedError, CustomNSError, Sendable, Equatable {
         case .openAppFailed(let name):
             return "SideStore was denied permission to launch \(name)."
         case .pairingNotComplete(let reason):
-            return "Pairing Required: \(reason)\n\nWithout a valid pairing file, SideStore operations cannot connect to your device. Please pair your device or import a valid pairing file."
+            return "Pairing erforderlich: \(reason)\n\nOhne gültige Pairing-Datei kann sich der Store nicht mit deinem Gerät verbinden. Lege die Pairing-Datei mit dem spanani Installer ab oder wähle sie in den Einstellungen aus."
         case .pledgeInactive(let appName):
             return "Your pledge is no longer active. Please renew it to continue using \(appName) normally."
         case .SideJITIssue(let error):

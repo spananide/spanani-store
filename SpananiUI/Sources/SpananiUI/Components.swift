@@ -409,10 +409,14 @@ struct GlassTabBar: View {
 
 // MARK: - GradientBackdrop
 
-struct GradientBackdrop: View {
-    let tint: Color
+public struct GradientBackdrop: View {
+    public let tint: Color
 
-    var body: some View {
+    public init(tint: Color = .brand) {
+        self.tint = tint
+    }
+
+    public var body: some View {
         RadialGradient(
             colors: [
                 tint.opacity(0.48),
