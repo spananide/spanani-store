@@ -1,0 +1,63 @@
+name: Preview Screenshots
+
+on:
+  push:
+    branches:
+      - '**'
+    paths:
+      - 'SpananiUI/**'
+      - 'SpananiPreview/**'
+      - '.github/workflows/preview.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode Project
+        run: |
+          cd SpananiPreview
+          xcodegen generate
+
+      - name: Build for Simulator
+        run: |
+          xcodebuild -project SpananiPreview/SpananiPreview.xcodeproj \
+            -scheme SpananiPreview \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Take Simulator Screenshots
+        run: |
+          set -euo pipefail
+          UDID=$(xcrun simctl list devices available | grep -m1 iPhone | grep -oE '[0-9A-F-]{36}')
+          xcrun simctl boot $UDID
+          xcrun simctl ui $UDID appearance dark
+          xcrun simctl install $UDID build/Build/Products/Debug-iphonesimulator/SpananiPreview.app
+          shot() {
+            xcrun simctl terminate $UDID de.spanani.store.preview 2>/dev/null || true
+            xcrun simctl launch $UDID de.spanani.store.preview "${@:2}"
+            sleep 8
+            xcrun simctl io $UDID screenshot "$1"
+          }
+          shot shot-discover.png -tab 0
+          shot shot-myapps.png -tab 1
+          shot shot-sources.png -tab 2
+          shot shot-settings.png -tab 3
+          shot shot-detail.png -tab 0 -detail 0
+
+      - name: Upload Screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: shots
+          path: shot-*.png
