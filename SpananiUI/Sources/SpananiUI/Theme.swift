@@ -28,7 +28,7 @@ extension Color {
     static let ink = Color(uiColor: .adaptive(darkHex: 0xece8f3, lightHex: 0x1a1622))
     static let inkSoft = Color(uiColor: .adaptive(darkHex: 0xa69fb4, lightHex: 0x5b536a))
     static let inkFaint = Color(uiColor: .adaptive(darkHex: 0x8c849c, lightHex: 0x665e77))
-    static let brand = Color(uiColor: .adaptive(darkHex: 0x9955e7, lightHex: 0x9955e7))
+    public static let brand = Color(uiColor: .adaptive(darkHex: 0x9955e7, lightHex: 0x9955e7))
     static let accent = Color(uiColor: .adaptive(darkHex: 0xb892f2, lightHex: 0x661bbb))
     static let success = Color(uiColor: .adaptive(darkHex: 0x4fd69c, lightHex: 0x0b6b4a))
     static let danger = Color(uiColor: .adaptive(darkHex: 0xff7a88, lightHex: 0xc42b3a))
