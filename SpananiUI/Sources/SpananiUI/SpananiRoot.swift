@@ -19,49 +19,17 @@ public struct SpananiRoot: View {
     }
 
     public var body: some View {
-        TabView(selection: $selectedTab) {
-            NavigationStack {
-                DiscoverView(
-                    selectedApp: $selectedAppForDetail,
-                    onNavigateToTab: { tabIndex in
-                        selectedTab = tabIndex
-                    }
-                )
-            }
-            .tabItem {
-                Label("Discover", systemImage: "square.grid.2x2")
-            }
-            .tag(0)
+        ZStack {
+            Color.paper
+                .ignoresSafeArea()
 
-            NavigationStack {
-                MyAppsView(
-                    onNavigateToTab: { tabIndex in
-                        selectedTab = tabIndex
-                    }
-                )
-            }
-            .tabItem {
-                Label("My Apps", systemImage: "arrow.down.app")
-            }
-            .tag(1)
+            tabContent
 
-            NavigationStack {
-                SourcesView()
+            VStack {
+                Spacer()
+                GlassTabBar(selection: $selectedTab)
             }
-            .tabItem {
-                Label("Sources", systemImage: "tray.full")
-            }
-            .tag(2)
-
-            NavigationStack {
-                SettingsView()
-            }
-            .tabItem {
-                Label("Settings", systemImage: "gearshape")
-            }
-            .tag(3)
         }
-        .tint(.spananiAccent)
         .environmentObject(model)
         .onAppear {
             if selectedAppForDetail == nil,
@@ -72,22 +40,38 @@ public struct SpananiRoot: View {
         }
         .sheet(item: $selectedAppForDetail) { app in
             AppDetailView(app: app)
-                .tint(.spananiAccent)
                 .environmentObject(model)
                 .presentationDragIndicator(.visible)
         }
-        .alert(
-            "Something went wrong",
-            isPresented: Binding(
-                get: { model.lastError != nil },
-                set: { if !$0 { model.lastError = nil } }
+    }
+
+    @ViewBuilder
+    private var tabContent: some View {
+        switch selectedTab {
+        case 0:
+            DiscoverView(
+                selectedApp: $selectedAppForDetail,
+                onNavigateToTab: { tabIndex in
+                    selectedTab = tabIndex
+                }
             )
-        ) {
-            Button("OK") {
-                model.lastError = nil
-            }
-        } message: {
-            Text(model.lastError ?? "")
+        case 1:
+            MyAppsView(
+                onNavigateToTab: { tabIndex in
+                    selectedTab = tabIndex
+                }
+            )
+        case 2:
+            SourcesView()
+        case 3:
+            SettingsView()
+        default:
+            DiscoverView(
+                selectedApp: $selectedAppForDetail,
+                onNavigateToTab: { tabIndex in
+                    selectedTab = tabIndex
+                }
+            )
         }
     }
 }
