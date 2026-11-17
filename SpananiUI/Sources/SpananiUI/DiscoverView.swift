@@ -125,13 +125,16 @@ struct DiscoverView: View {
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Picker("Category", selection: $selectedCategory) {
-                    Text("All").tag("All")
-                    ForEach(model.categories, id: \.self) { category in
-                        Text(category).tag(category)
+                Menu {
+                    Picker("Category", selection: $selectedCategory) {
+                        Text("All").tag("All")
+                        ForEach(model.categories, id: \.self) { category in
+                            Text(category).tag(category)
+                        }
                     }
+                } label: {
+                    Label("Category", systemImage: "line.3.horizontal.decrease")
                 }
-                .pickerStyle(.menu)
             }
         }
         .overlay {

@@ -113,281 +113,72 @@ private struct AuthenticationView: View
 
     var body: some View
     {
-        ZStack(alignment: .top) {
-            Color.paper
-                .ignoresSafeArea()
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("Apple ID", text: self.$viewModel.email)
+                        .keyboardType(.emailAddress)
+                        .textContentType(.username)
+                        .autocapitalization(.none)
+                        .disableAutocorrection(true)
+                        .focused(self.$focusedField, equals: .email)
+                        .submitLabel(.next)
+                        .onSubmit {
+                            self.focusedField = .password
+                        }
 
-            GradientBackdrop(tint: .brand)
-                .ignoresSafeArea()
+                    SecureField("Password", text: self.$viewModel.password)
+                        .textContentType(.password)
+                        .focused(self.$focusedField, equals: .password)
+                        .submitLabel(.go)
+                        .onSubmit {
+                            if self.viewModel.canSubmit {
+                                self.focusedField = nil
+                                self.viewModel.authenticate()
+                            }
+                        }
+                } footer: {
+                    Text("Your Apple ID is used to sign apps for this device. Credentials are stored in the Keychain and only sent to Apple.")
+                }
 
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(spacing: 20) {
-                    self.topBar
-
-                    self.headerSection
-
-                    self.fieldsSection
-
-                    if let errorMessage = self.viewModel.errorMessage {
-                        self.errorCard(message: errorMessage)
+                if let errorMessage = self.viewModel.errorMessage {
+                    Section {
+                        Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.red)
+                    } header: {
+                        Text("Sign-in failed")
                     }
-
-                    self.submitSection
-
-                    self.infoCard
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 8)
-                .padding(.bottom, 24)
-                .frame(maxWidth: 420)
-                .frame(maxWidth: .infinity)
             }
+            .navigationTitle("Sign In")
+            .navigationBarTitleDisplayMode(.large)
             .scrollDismissesKeyboard(.interactively)
-        }
-    }
-
-    private var topBar: some View
-    {
-        HStack {
-            SwiftUI.Button {
-                self.viewModel.cancel()
-            } label: {
-                Text("Schließen")
-                    .font(.brand(14, .semibold))
-                    .foregroundColor(.inkSoft)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .background(Color.paperRaised)
-                    .clipShape(Capsule())
-                    .overlay(
-                        Capsule().stroke(Color.white.opacity(0.08), lineWidth: 1)
-                    )
-            }
-            .buttonStyle(.plain)
-
-            Spacer()
-        }
-    }
-
-    private var headerSection: some View
-    {
-        VStack(spacing: 16) {
-            self.brandChip
-
-            VStack(spacing: 8) {
-                Text("Mit Apple-ID anmelden")
-                    .font(.brand(30, .extrabold))
-                    .foregroundColor(.ink)
-                    .multilineTextAlignment(.center)
-
-                Text("Damit der Store Apps auf deinem iPhone signieren kann.")
-                    .font(.system(size: 15))
-                    .foregroundColor(.inkSoft)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 16)
-            }
-        }
-        .frame(maxWidth: .infinity)
-    }
-
-    private var brandChip: some View
-    {
-        ZStack {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color.brand)
-                .frame(width: 72, height: 72)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .stroke(Color.white.opacity(0.18), lineWidth: 1)
-                )
-                .shadow(color: Color.brand.opacity(0.35), radius: 14, x: 0, y: 6)
-
-            SpananiMark()
-                .foregroundColor(.white)
-                .frame(width: 44, height: 44)
-        }
-    }
-
-    private var fieldsSection: some View
-    {
-        VStack(spacing: 12) {
-            self.appleIDField
-            self.passwordField
-        }
-    }
-
-    private var appleIDField: some View
-    {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("APPLE-ID")
-                .font(.brand(12, .semibold))
-                .foregroundColor(.inkFaint)
-
-            TextField("name@beispiel.de", text: self.$viewModel.email)
-                .font(.system(size: 16))
-                .foregroundColor(.ink)
-                .keyboardType(.emailAddress)
-                .textContentType(.username)
-                .autocapitalization(.none)
-                .disableAutocorrection(true)
-                .focused(self.$focusedField, equals: .email)
-                .submitLabel(.next)
-                .onSubmit {
-                    self.focusedField = .password
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    SwiftUI.Button("Cancel") {
+                        self.viewModel.cancel()
+                    }
                 }
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(Color.paperRaised)
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(
-                    self.focusedField == .email ? Color.brand.opacity(0.55) : Color.white.opacity(0.08),
-                    lineWidth: 1
-                )
-        )
-    }
 
-    private var passwordField: some View
-    {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("PASSWORT")
-                .font(.brand(12, .semibold))
-                .foregroundColor(.inkFaint)
-
-            SecureField("Passwort", text: self.$viewModel.password)
-                .font(.system(size: 16))
-                .foregroundColor(.ink)
-                .textContentType(.password)
-                .focused(self.$focusedField, equals: .password)
-                .submitLabel(.go)
-                .onSubmit {
-                    if self.viewModel.canSubmit {
+                ToolbarItem(placement: .confirmationAction) {
+                    SwiftUI.Button {
                         self.focusedField = nil
                         self.viewModel.authenticate()
+                    } label: {
+                        if self.viewModel.isLoading {
+                            ProgressView()
+                        } else if self.viewModel.isAuthenticated {
+                            Label("Signed In", systemImage: "checkmark.circle.fill")
+                        } else {
+                            Text("Sign In")
+                        }
                     }
+                    .disabled(!self.viewModel.canSubmit)
                 }
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(Color.paperRaised)
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(
-                    self.focusedField == .password ? Color.brand.opacity(0.55) : Color.white.opacity(0.08),
-                    lineWidth: 1
-                )
-        )
-    }
-
-    private func errorCard(message: String) -> some View
-    {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 8) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(.danger)
-
-                Text("Anmeldung fehlgeschlagen")
-                    .font(.brand(15, .semibold))
-                    .foregroundColor(.danger)
             }
-
-            Text(message)
-                .font(.system(size: 13))
-                .foregroundColor(.inkSoft)
-                .fixedSize(horizontal: false, vertical: true)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(Color.danger.opacity(0.12))
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(Color.danger.opacity(0.28), lineWidth: 1)
-        )
-    }
-
-    private var submitSection: some View
-    {
-        SwiftUI.Button {
-            self.focusedField = nil
-            self.viewModel.authenticate()
-        } label: {
-            HStack(spacing: 8) {
-                if self.viewModel.isLoading {
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                } else if self.viewModel.isAuthenticated {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 18, weight: .semibold))
-                }
-
-                Text(self.viewModel.isAuthenticated ? "Angemeldet" : "Anmelden")
-                    .font(.brand(17, .semibold))
-                    .foregroundColor(.white)
-            }
-            .frame(maxWidth: .infinity)
-            .frame(minHeight: 54)
-            .background(self.buttonBackground)
-            .clipShape(Capsule())
-            .shadow(color: self.buttonShadowColor, radius: 12, x: 0, y: 4)
-        }
-        .disabled(!self.viewModel.canSubmit && !self.viewModel.isAuthenticated)
-        .buttonStyle(.plain)
-    }
-
-    private var buttonBackground: Color
-    {
-        if self.viewModel.isAuthenticated {
-            return Color.success
-        } else if self.viewModel.canSubmit {
-            return Color.brand
-        } else {
-            return Color.brand.opacity(0.35)
-        }
-    }
-
-    private var buttonShadowColor: Color
-    {
-        if self.viewModel.isAuthenticated {
-            return Color.success.opacity(0.3)
-        } else if self.viewModel.canSubmit {
-            return Color.brand.opacity(0.3)
-        } else {
-            return Color.clear
-        }
-    }
-
-    private var infoCard: some View
-    {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 6) {
-                Image(systemName: "lock.shield.fill")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.brand)
-
-                Text("Warum brauchen wir das?")
-                    .font(.brand(14, .semibold))
-                    .foregroundColor(.ink)
-            }
-
-            Text("Mit deiner Apple-ID richten wir Apps auf diesem Gerät ein. Deine Zugangsdaten werden sicher im Schlüsselbund gespeichert und nur an Apple gesendet.")
-                .font(.system(size: 13))
-                .foregroundColor(.inkSoft)
-                .fixedSize(horizontal: false, vertical: true)
-                .lineSpacing(3)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
-        .background(Color.paperRaised.opacity(0.65))
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Color.white.opacity(0.06), lineWidth: 1)
-        )
+        .tint(.spananiAccent)
+        .background(Color(.systemGroupedBackground))
     }
 }
 

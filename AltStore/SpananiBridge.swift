@@ -110,7 +110,7 @@ final class SpananiBridge: StoreActions {
 
         let mappedApps: [StoreItem] = sortedApps.enumerated().map { index, app in
             let isFeatured = index < 4
-            let heroTagline = isFeatured ? (index % 2 == 0 ? "Neu im Store" : "Beliebt") : ""
+            let heroTagline = isFeatured ? (index % 2 == 0 ? "New" : "Popular") : ""
             let tintColor = app.tintColor ?? defaultTint
             let versionString = app.latestSupportedVersion?.version ?? app.version ?? "—"
             let size = app.latestSupportedVersion?.size ?? app._size
@@ -194,31 +194,31 @@ final class SpananiBridge: StoreActions {
     private func mapCategory(_ app: StoreApp) -> String {
         if let cat = app.category {
             switch cat {
-            case .developer: return "Entwickler"
-            case .entertainment: return "Medien"
-            case .games: return "Spiele"
+            case .developer: return "Developer"
+            case .entertainment: return "Media"
+            case .games: return "Games"
             case .lifestyle: return "Lifestyle"
-            case .other: return "Sonstiges"
-            case .photoAndVideo: return "Foto & Video"
+            case .other: return "Other"
+            case .photoAndVideo: return "Photo & Video"
             case .social: return "Social"
-            case .utilities: return "Werkzeuge"
+            case .utilities: return "Utilities"
             }
         }
         if let raw = app._category?.lowercased() {
             switch raw {
-            case "developer": return "Entwickler"
-            case "entertainment": return "Medien"
-            case "games": return "Spiele"
+            case "developer": return "Developer"
+            case "entertainment": return "Media"
+            case "games": return "Games"
             case "lifestyle": return "Lifestyle"
-            case "other": return "Sonstiges"
-            case "photo-video", "photovideo", "photo & video": return "Foto & Video"
+            case "other": return "Other"
+            case "photo-video", "photovideo", "photo & video": return "Photo & Video"
             case "social": return "Social"
-            case "utilities": return "Werkzeuge"
-            case "education": return "Lernen"
-            default: return "Sonstiges"
+            case "utilities": return "Utilities"
+            case "education": return "Education"
+            default: return "Other"
             }
         }
-        return "Sonstiges"
+        return "Other"
     }
 
     // MARK: - Navigation Helper
@@ -278,7 +278,7 @@ final class SpananiBridge: StoreActions {
             let error = NSError(
                 domain: "SpananiBridge",
                 code: 404,
-                userInfo: [NSLocalizedDescriptionKey: "App “\(app.name)” konnte nicht im Store gefunden werden."]
+                userInfo: [NSLocalizedDescriptionKey: "App “\(app.name)” could not be found in the store."]
             )
             debugLog("[SpananiBridge] StoreApp not found: \(app.id)")
             throw error
@@ -325,7 +325,7 @@ final class SpananiBridge: StoreActions {
             let error = NSError(
                 domain: "SpananiBridge",
                 code: 404,
-                userInfo: [NSLocalizedDescriptionKey: "Installierte App “\(app.name)” wurde nicht gefunden."]
+                userInfo: [NSLocalizedDescriptionKey: "Installed app “\(app.name)” was not found."]
             )
             debugLog("[SpananiBridge] InstalledApp not found for refresh: \(app.id)")
             throw error
@@ -430,7 +430,7 @@ final class SpananiBridge: StoreActions {
             let error = NSError(
                 domain: "SpananiBridge",
                 code: 404,
-                userInfo: [NSLocalizedDescriptionKey: "Installierte App wurde nicht gefunden."]
+                userInfo: [NSLocalizedDescriptionKey: "Installed app was not found."]
             )
             debugLog("[SpananiBridge] App not found for deactivation: \(app.id)")
             throw error
@@ -479,7 +479,7 @@ final class SpananiBridge: StoreActions {
             let error = NSError(
                 domain: "SpananiBridge",
                 code: 400,
-                userInfo: [NSLocalizedDescriptionKey: "Ungültige URL. Bitte gib eine gültige HTTP- oder HTTPS-Adresse ein."]
+                userInfo: [NSLocalizedDescriptionKey: "Invalid URL. Enter a valid HTTP or HTTPS address."]
             )
             debugLog("[SpananiBridge] Invalid source URL: \(urlString)")
             throw error
@@ -492,7 +492,7 @@ final class SpananiBridge: StoreActions {
             let error = NSError(
                 domain: "SpananiBridge",
                 code: 500,
-                userInfo: [NSLocalizedDescriptionKey: "Kein aktiver View Controller zum Bestätigen verfügbar."]
+                userInfo: [NSLocalizedDescriptionKey: "No active view controller available for confirmation."]
             )
             debugLog("[SpananiBridge] No top view controller to present add source dialog.")
             throw error
@@ -513,7 +513,7 @@ final class SpananiBridge: StoreActions {
             let error = NSError(
                 domain: "SpananiBridge",
                 code: 404,
-                userInfo: [NSLocalizedDescriptionKey: "Quelle “\(source.name)” wurde in der Datenbank nicht gefunden."]
+                userInfo: [NSLocalizedDescriptionKey: "Source “\(source.name)” was not found in the database."]
             )
             debugLog("[SpananiBridge] Source not found for removal: \(source.id)")
             throw error
@@ -523,7 +523,7 @@ final class SpananiBridge: StoreActions {
             let error = NSError(
                 domain: "SpananiBridge",
                 code: 500,
-                userInfo: [NSLocalizedDescriptionKey: "Kein aktiver View Controller zum Bestätigen verfügbar."]
+                userInfo: [NSLocalizedDescriptionKey: "No active view controller available for confirmation."]
             )
             debugLog("[SpananiBridge] No top view controller to present remove source dialog.")
             throw error
