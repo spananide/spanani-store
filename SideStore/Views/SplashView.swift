@@ -20,7 +20,6 @@ final class SplashViewModel: ObservableObject {
 
 struct SplashView: View {
     @ObservedObject var viewModel: SplashViewModel
-    @State private var isPulsing = false
 
     var body: some View {
         ZStack {
@@ -35,15 +34,7 @@ struct SplashView: View {
             VStack(spacing: 20) {
                 Spacer()
 
-                SpananiMark()
-                    .frame(width: 96, height: 96)
-                    .foregroundStyle(Color.brand)
-                    .shadow(color: Color.brand.opacity(0.35), radius: 18, x: 0, y: 8)
-                    .scaleEffect(isPulsing ? 1.05 : 1.0)
-                    .animation(
-                        .easeInOut(duration: 1.8).repeatForever(autoreverses: true),
-                        value: isPulsing
-                    )
+                Mark3DTile(size: 112)
 
                 Text(NSLocalizedString("spanani Store", comment: ""))
                     .font(.brand(28, .extrabold))
@@ -63,20 +54,19 @@ struct SplashView: View {
         .onAppear {
             // needs proper testing on physical device
             SpananiFont.register()
-            isPulsing = true
         }
     }
 
     private func localizedStatus(_ status: String) -> String {
         switch status {
         case "Starting…", "Starting...":
-            return NSLocalizedString("Wird gestartet…", comment: "")
+            return NSLocalizedString("Starting…", comment: "")
         case "Loading apps…", "Loading apps...":
-            return NSLocalizedString("Apps werden geladen…", comment: "")
+            return NSLocalizedString("Loading apps…", comment: "")
         case "Updating sources…", "Updating sources...":
-            return NSLocalizedString("Quellen werden aktualisiert…", comment: "")
+            return NSLocalizedString("Updating sources…", comment: "")
         case "Almost there…", "Almost there...":
-            return NSLocalizedString("Gleich fertig…", comment: "")
+            return NSLocalizedString("Almost there…", comment: "")
         default:
             return status
         }

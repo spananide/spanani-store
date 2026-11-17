@@ -94,7 +94,7 @@ struct OnboardingView: View {
                             .background(Color.paperRaised)
                             .clipShape(Circle())
                             .overlay(
-                                Circle().stroke(Color.white.opacity(0.08), lineWidth: 1)
+                                Circle().stroke(Color.paperSunk, lineWidth: 1)
                             )
                     }
                     Spacer()
@@ -111,27 +111,35 @@ struct OnboardingView: View {
     }
 }
 
-// MARK: - Hero Glow Helper
+// MARK: - Step Icon Tile
 
-private struct HeroGlow: View {
+private struct StepIconTile: View {
+    let symbol: String
     var color: Color = .brand
+    var size: CGFloat = 88
+    var cornerRadius: CGFloat = 20
 
     var body: some View {
-        Circle()
-            .fill(
-                RadialGradient(
-                    colors: [
-                        color.opacity(0.35),
-                        color.opacity(0.12),
-                        Color.clear
-                    ],
-                    center: .center,
-                    startRadius: 8,
-                    endRadius: 75
-                )
+        ZStack {
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .fill(Color.black.opacity(0.35))
+                .frame(width: size, height: size)
+                .offset(x: 5, y: 5)
+
+            ZStack {
+                Color.paperRaised
+                Image(systemName: symbol)
+                    .font(.system(size: size * 0.42, weight: .bold))
+                    .foregroundColor(color)
+            }
+            .frame(width: size, height: size)
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .stroke(Color.paperSunk, lineWidth: 1)
             )
-            .frame(width: 150, height: 150)
-            .blur(radius: 12)
+        }
+        .frame(width: size, height: size)
     }
 }
 
@@ -139,13 +147,12 @@ private struct HeroGlow: View {
 
 private struct WelcomeStep: View {
     let onNext: () -> Void
-    @State private var isBreathing = false
 
     var body: some View {
         VStack(spacing: 20) {
             Spacer()
 
-            heroIcon
+            Mark3DTile(size: 132)
 
             headerTexts
 
@@ -157,51 +164,15 @@ private struct WelcomeStep: View {
         }
     }
 
-    private var heroIcon: some View {
-        ZStack {
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [
-                            Color.brand.opacity(0.35),
-                            Color.brand.opacity(0.12),
-                            Color.clear
-                        ],
-                        center: .center,
-                        startRadius: 10,
-                        endRadius: 90
-                    )
-                )
-                .frame(width: 180, height: 180)
-                .blur(radius: 12)
-
-            Image(uiImage: UIImage(named: "AppIcon") ?? UIImage(named: "AppIcon60x60") ?? UIImage(systemName: "app.fill")!)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 112, height: 112)
-                .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 26, style: .continuous)
-                        .stroke(Color.white.opacity(0.12), lineWidth: 1)
-                )
-                .shadow(color: Color.brand.opacity(0.35), radius: 18, x: 0, y: 8)
-                .scaleEffect(isBreathing ? 1.05 : 1.0)
-                .animation(.easeInOut(duration: 1.8).repeatForever(autoreverses: true), value: isBreathing)
-        }
-        .onAppear {
-            isBreathing = true
-        }
-    }
-
     private var headerTexts: some View {
         VStack(spacing: 8) {
-            Text(NSLocalizedString("Willkommen im spanani Store", comment: ""))
-                .font(.brand(32, .extrabold))
+            Text(NSLocalizedString("Welcome to spanani Store", comment: ""))
+                .font(.brand(30, .extrabold))
                 .foregroundColor(.ink)
                 .multilineTextAlignment(.center)
                 .minimumScaleFactor(0.85)
 
-            Text(NSLocalizedString("Apps direkt auf deinem iPhone installieren und auffrischen, ganz ohne Computer.", comment: ""))
+            Text(NSLocalizedString("Install and refresh apps directly on your device, without a computer.", comment: ""))
                 .font(.system(size: 15))
                 .foregroundColor(.inkSoft)
                 .multilineTextAlignment(.center)
@@ -214,16 +185,16 @@ private struct WelcomeStep: View {
             FeatureTile(
                 icon: "arrow.triangle.2.circlepath",
                 color: .brand,
-                title: NSLocalizedString("Direktes Sideloading", comment: ""),
-                description: NSLocalizedString("Installiere und aktualisiere Apps über einen lokalen VPN-Tunnel direkt auf deinem Gerät.", comment: "")
+                title: NSLocalizedString("Direct Sideloading", comment: ""),
+                description: NSLocalizedString("Install and refresh apps directly on your device using a local VPN tunnel.", comment: "")
             )
 
             FeatureTile(
                 icon: "doc.badge.gearshape",
                 color: .accent,
-                title: NSLocalizedString("Geräte-Kopplung", comment: ""),
+                title: NSLocalizedString("Device Pairing", comment: ""),
                 description: String(
-                    format: NSLocalizedString("Eine einmalige Pairing-Datei verbindet den Store mit den Diensten deines %@.", comment: ""),
+                    format: NSLocalizedString("A one-time pairing file connects the store with services on your %@.", comment: ""),
                     ProcessInfo.processInfo.platformName
                 )
             )
@@ -231,8 +202,8 @@ private struct WelcomeStep: View {
             FeatureTile(
                 icon: "person.crop.circle.badge.checkmark",
                 color: .success,
-                title: NSLocalizedString("Eigene Signierung", comment: ""),
-                description: NSLocalizedString("Verwende deine eigene Apple-ID, um Apps mit Standard-Entwicklerzertifikaten zu signieren.", comment: "")
+                title: NSLocalizedString("Personal Signing", comment: ""),
+                description: NSLocalizedString("Use your own Apple ID to sign apps with standard developer certificates.", comment: "")
             )
         }
         .frame(maxWidth: 420)
@@ -241,14 +212,13 @@ private struct WelcomeStep: View {
 
     private var startButton: some View {
         SwiftUI.Button(action: onNext) {
-            Text(NSLocalizedString("Los geht's", comment: ""))
+            Text(NSLocalizedString("Continue", comment: ""))
                 .font(.brand(17, .semibold))
                 .foregroundColor(.white)
                 .frame(maxWidth: .infinity)
-                .frame(minHeight: 52)
+                .frame(minHeight: 54)
                 .background(Color.brand)
                 .clipShape(Capsule())
-                .shadow(color: Color.brand.opacity(0.3), radius: 12, x: 0, y: 4)
         }
         .frame(maxWidth: 420)
         .padding(.horizontal, 20)
@@ -289,7 +259,7 @@ private struct FeatureTile: View {
         .clipShape(RoundedRectangle(cornerRadius: SpananiRadius.tile, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: SpananiRadius.tile, style: .continuous)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                .stroke(Color.paperSunk, lineWidth: 1)
         )
     }
 }
@@ -308,7 +278,10 @@ private struct PairingFileStep: View {
         VStack(spacing: 20) {
             Spacer()
 
-            heroIcon
+            StepIconTile(
+                symbol: hasPairingFile ? "checkmark.seal.fill" : "doc.badge.gearshape.fill",
+                color: hasPairingFile ? .success : .brand
+            )
 
             headerTexts
 
@@ -346,55 +319,35 @@ private struct PairingFileStep: View {
         #endif
     }
 
-    private var heroIcon: some View {
-        ZStack {
-            HeroGlow(color: hasPairingFile ? .success : .brand)
-
-            Image(systemName: hasPairingFile ? "checkmark.seal.fill" : "doc.badge.gearshape.fill")
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 80, height: 80)
-                .foregroundColor(hasPairingFile ? .success : .brand)
-                .animation(.easeInOut, value: hasPairingFile)
-        }
-    }
-
     private var headerTexts: some View {
-        VStack(spacing: 8) {
-            Text(NSLocalizedString("Pairing-Datei", comment: ""))
-                .font(.brand(32, .extrabold))
+        VStack(alignment: .leading, spacing: 8) {
+            Text(NSLocalizedString("Pairing File", comment: ""))
+                .font(.brand(30, .extrabold))
                 .foregroundColor(.ink)
-                .multilineTextAlignment(.center)
 
             Text(String(
-                format: NSLocalizedString("Der Store benötigt eine Pairing-Datei (.mobiledevicepairing oder .plist) von deinem Computer, um mit den %@-Diensten zu kommunizieren.", comment: ""),
+                format: NSLocalizedString("The store requires a pairing file (.mobiledevicepairing or .plist) from your computer to communicate with %@ services.", comment: ""),
                 ProcessInfo.processInfo.platformName
             ))
             .font(.system(size: 15))
             .foregroundColor(.inkSoft)
-            .multilineTextAlignment(.center)
-            .padding(.horizontal, 24)
         }
+        .frame(maxWidth: 420)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 24)
     }
 
     @ViewBuilder
     private var statusAndActions: some View {
-        VStack(spacing: 12) {
+        VStack(alignment: .leading, spacing: 12) {
             if hasPairingFile {
                 HStack(spacing: 8) {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundColor(.success)
-                    Text(NSLocalizedString("Pairing-Datei erkannt und geladen.", comment: ""))
+                    Text(NSLocalizedString("Pairing file detected and loaded.", comment: ""))
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.ink)
+                        .foregroundColor(.success)
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-                .background(Color.success.opacity(0.12))
-                .clipShape(Capsule())
-                .overlay(
-                    Capsule().stroke(Color.success.opacity(0.25), lineWidth: 1)
-                )
             }
 
             #if !os(tvOS)
@@ -402,58 +355,64 @@ private struct PairingFileStep: View {
                 HStack(spacing: 8) {
                     Image(systemName: "square.and.arrow.down")
                     Text(hasPairingFile
-                        ? NSLocalizedString("Andere Datei wählen", comment: "")
-                        : NSLocalizedString("Pairing-Datei auswählen", comment: ""))
+                        ? NSLocalizedString("Choose different file", comment: "")
+                        : NSLocalizedString("Import pairing file", comment: ""))
                 }
                 .font(.brand(16, .semibold))
                 .foregroundColor(.brand)
                 .frame(maxWidth: .infinity)
-                .frame(minHeight: 48)
+                .frame(minHeight: 54)
                 .background(Color.paperRaised)
                 .clipShape(Capsule())
                 .overlay(
-                    Capsule().stroke(Color.brand.opacity(0.3), lineWidth: 1)
+                    Capsule().stroke(Color.paperSunk, lineWidth: 1)
                 )
             }
 
-            SwiftUI.Button(action: {
-                UIApplication.shared.open(AppConstants.URLs.pairingDocumentation)
-            }) {
-                Text(NSLocalizedString("Wie erhalte ich eine Pairing-Datei?", comment: ""))
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.accent)
+            HStack {
+                Spacer()
+                SwiftUI.Button(action: {
+                    UIApplication.shared.open(AppConstants.URLs.pairingDocumentation)
+                }) {
+                    Text(NSLocalizedString("How do I get a pairing file?", comment: ""))
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.accent)
+                }
+                Spacer()
             }
             #endif
 
             if let errorMessage {
-                Text(errorMessage)
-                    .font(.footnote)
-                    .foregroundColor(.danger)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 16)
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundColor(.danger)
+                    Text(errorMessage)
+                        .font(.footnote)
+                        .foregroundColor(.danger)
+                }
             }
         }
         .frame(maxWidth: 420)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 24)
     }
 
     private var bottomButtons: some View {
         VStack(spacing: 12) {
             SwiftUI.Button(action: onNext) {
-                Text(NSLocalizedString("Weiter", comment: ""))
+                Text(NSLocalizedString("Continue", comment: ""))
                     .font(.brand(17, .semibold))
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
-                    .frame(minHeight: 52)
+                    .frame(minHeight: 54)
                     .background(hasPairingFile ? Color.brand : Color.brand.opacity(0.35))
                     .clipShape(Capsule())
-                    .shadow(color: hasPairingFile ? Color.brand.opacity(0.3) : Color.clear, radius: 12, x: 0, y: 4)
             }
             .disabled(!hasPairingFile)
 
             if !hasPairingFile {
                 SwiftUI.Button(action: onNext) {
-                    Text(NSLocalizedString("Später einrichten", comment: ""))
+                    Text(NSLocalizedString("Set up later", comment: ""))
                         .font(.brand(15, .semibold))
                         .foregroundColor(.inkSoft)
                 }
@@ -484,7 +443,10 @@ private struct LocalDevVPNStep: View {
         VStack(spacing: 20) {
             Spacer()
 
-            heroIcon
+            StepIconTile(
+                symbol: isConnected ? "checkmark.circle.fill" : "network",
+                color: isConnected ? .success : .brand
+            )
 
             headerTexts
 
@@ -508,95 +470,52 @@ private struct LocalDevVPNStep: View {
         }
     }
 
-    private var heroIcon: some View {
-        ZStack {
-            HeroGlow(color: isConnected ? .success : .brand)
-
-            ZStack(alignment: .bottomTrailing) {
-                if let uiImage = UIImage(named: "LocalDevVPN") {
-                    Image(uiImage: uiImage)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 88, height: 88)
-                        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                                .stroke(Color.white.opacity(0.12), lineWidth: 1)
-                        )
-                        .shadow(color: Color.brand.opacity(0.3), radius: 12, x: 0, y: 4)
-                } else {
-                    Image(systemName: "network")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 80, height: 80)
-                        .foregroundColor(.brand)
-                }
-
-                if isConnected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 26))
-                        .foregroundColor(.success)
-                        .background(Circle().fill(Color.paper))
-                        .offset(x: 4, y: 4)
-                        .transition(.scale.combined(with: .opacity))
-                }
-            }
-            .animation(.easeInOut, value: isConnected)
-        }
-    }
-
     private var headerTexts: some View {
-        VStack(spacing: 8) {
+        VStack(alignment: .leading, spacing: 8) {
             Text(NSLocalizedString("LocalDevVPN", comment: ""))
-                .font(.brand(32, .extrabold))
+                .font(.brand(30, .extrabold))
                 .foregroundColor(.ink)
 
-            Text(NSLocalizedString("Der Store kommuniziert über ein lokales Loopback-VPN mit Diensten auf dem Gerät. Aktiviere LocalDevVPN vor der Überprüfung.", comment: ""))
+            Text(NSLocalizedString("The store communicates with on-device services through a local loopback VPN. Enable LocalDevVPN before verifying.", comment: ""))
                 .font(.system(size: 15))
                 .foregroundColor(.inkSoft)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 24)
         }
+        .frame(maxWidth: 420)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 24)
     }
 
     @ViewBuilder
     private var statusAndActions: some View {
-        VStack(spacing: 12) {
+        VStack(alignment: .leading, spacing: 12) {
             if isConnected {
                 HStack(spacing: 8) {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundColor(.success)
-                    Text(NSLocalizedString("LocalDevVPN ist verbunden.", comment: ""))
+                    Text(NSLocalizedString("LocalDevVPN is connected.", comment: ""))
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.ink)
+                        .foregroundColor(.success)
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-                .background(Color.success.opacity(0.12))
-                .clipShape(Capsule())
-                .overlay(
-                    Capsule().stroke(Color.success.opacity(0.25), lineWidth: 1)
-                )
             } else {
                 SwiftUI.Button(action: verifyVPN) {
                     HStack(spacing: 8) {
                         Image(systemName: "bolt.horizontal.fill")
-                        Text(NSLocalizedString("VPN überprüfen", comment: ""))
+                        Text(NSLocalizedString("Open LocalDevVPN", comment: ""))
                     }
                     .font(.brand(16, .semibold))
                     .foregroundColor(.brand)
                     .frame(maxWidth: .infinity)
-                    .frame(minHeight: 48)
+                    .frame(minHeight: 54)
                     .background(Color.paperRaised)
                     .clipShape(Capsule())
                     .overlay(
-                        Capsule().stroke(Color.brand.opacity(0.3), lineWidth: 1)
+                        Capsule().stroke(Color.paperSunk, lineWidth: 1)
                     )
                 }
             }
 
             if let errorMessage {
-                VStack(spacing: 8) {
+                VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 6) {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .foregroundColor(.warning)
@@ -604,7 +523,6 @@ private struct LocalDevVPNStep: View {
                             .font(.footnote)
                             .foregroundColor(.inkSoft)
                     }
-                    .multilineTextAlignment(.center)
 
                     if !isInstalled {
                         SwiftUI.Button(action: {
@@ -612,36 +530,35 @@ private struct LocalDevVPNStep: View {
                         }) {
                             HStack(spacing: 6) {
                                 Image(systemName: "arrow.down.app")
-                                Text(NSLocalizedString("LocalDevVPN im App Store laden", comment: ""))
+                                Text(NSLocalizedString("Get LocalDevVPN from App Store", comment: ""))
                             }
                             .font(.system(size: 14, weight: .medium))
                             .foregroundColor(.accent)
                         }
                     }
                 }
-                .padding(.horizontal, 16)
             }
         }
         .frame(maxWidth: 420)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 24)
     }
 
     private var bottomButtons: some View {
         VStack(spacing: 12) {
             SwiftUI.Button(action: onNext) {
-                Text(NSLocalizedString("Weiter", comment: ""))
+                Text(NSLocalizedString("Continue", comment: ""))
                     .font(.brand(17, .semibold))
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
-                    .frame(minHeight: 52)
+                    .frame(minHeight: 54)
                     .background(isConnected ? Color.brand : Color.brand.opacity(0.35))
                     .clipShape(Capsule())
-                    .shadow(color: isConnected ? Color.brand.opacity(0.3) : Color.clear, radius: 12, x: 0, y: 4)
             }
             .disabled(!isConnected)
 
             SwiftUI.Button(action: onNext) {
-                Text(NSLocalizedString("Später einrichten", comment: ""))
+                Text(NSLocalizedString("Set up later", comment: ""))
                     .font(.brand(15, .semibold))
                     .foregroundColor(.inkSoft)
             }
@@ -670,7 +587,7 @@ private struct LocalDevVPNStep: View {
             errorMessage = nil
         } else {
             isConnected = false
-            if isInstalled, errorMessage == NSLocalizedString("LocalDevVPN ist auf diesem Gerät nicht installiert.", comment: "") {
+            if isInstalled, errorMessage == NSLocalizedString("LocalDevVPN is not installed on this device.", comment: "") {
                 errorMessage = nil
             }
         }
@@ -687,13 +604,13 @@ private struct LocalDevVPNStep: View {
             errorMessage = nil
             UIApplication.shared.open(vpnConnectURL, options: [:]) { success in
                 if !success {
-                    errorMessage = NSLocalizedString("LocalDevVPN ist auf diesem Gerät nicht installiert.", comment: "")
+                    errorMessage = NSLocalizedString("LocalDevVPN is not installed on this device.", comment: "")
                 }
             }
         } else {
             UIApplication.shared.open(vpnConnectURL, options: [:]) { success in
                 if !success {
-                    errorMessage = NSLocalizedString("LocalDevVPN ist auf diesem Gerät nicht installiert.", comment: "")
+                    errorMessage = NSLocalizedString("LocalDevVPN is not installed on this device.", comment: "")
                 }
             }
         }
@@ -712,7 +629,10 @@ private struct AppleIDStep: View {
         VStack(spacing: 20) {
             Spacer()
 
-            heroIcon
+            StepIconTile(
+                symbol: isAuthenticated ? "person.crop.circle.badge.checkmark" : "person.crop.circle",
+                color: isAuthenticated ? .success : .brand
+            )
 
             headerTexts
 
@@ -724,52 +644,33 @@ private struct AppleIDStep: View {
         }
     }
 
-    private var heroIcon: some View {
-        ZStack {
-            HeroGlow(color: isAuthenticated ? .success : .brand)
-
-            Image(systemName: isAuthenticated ? "person.crop.circle.badge.checkmark" : "person.crop.circle")
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 80, height: 80)
-                .foregroundColor(isAuthenticated ? .success : .brand)
-                .animation(.easeInOut, value: isAuthenticated)
-        }
-    }
-
     private var headerTexts: some View {
-        VStack(spacing: 8) {
-            Text(NSLocalizedString("Apple-ID", comment: ""))
-                .font(.brand(32, .extrabold))
+        VStack(alignment: .leading, spacing: 8) {
+            Text(NSLocalizedString("Apple ID", comment: ""))
+                .font(.brand(30, .extrabold))
                 .foregroundColor(.ink)
 
-            Text(NSLocalizedString("Der Store benötigt eine Apple-ID, um Entwicklerzertifikate und Bereitstellungsprofile zum Signieren von Apps zu erstellen.", comment: ""))
+            Text(NSLocalizedString("The store requires an Apple ID to create developer certificates and provisioning profiles for signing apps.", comment: ""))
                 .font(.system(size: 15))
                 .foregroundColor(.inkSoft)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 24)
         }
+        .frame(maxWidth: 420)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 24)
     }
 
     @ViewBuilder
     private var statusAndActions: some View {
-        if isAuthenticated {
-            HStack(spacing: 8) {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundColor(.success)
-                Text(AuthManager.shared.currentAppleID ?? NSLocalizedString("Angemeldet", comment: ""))
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.ink)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-            .background(Color.success.opacity(0.12))
-            .clipShape(Capsule())
-            .overlay(
-                Capsule().stroke(Color.success.opacity(0.25), lineWidth: 1)
-            )
-        } else {
-            VStack(spacing: 12) {
+        VStack(alignment: .leading, spacing: 12) {
+            if isAuthenticated {
+                HStack(spacing: 8) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(.success)
+                    Text(AuthManager.shared.currentAppleID ?? NSLocalizedString("Signed In", comment: ""))
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.success)
+                }
+            } else {
                 SwiftUI.Button(action: signIn) {
                     HStack(spacing: 8) {
                         if isSigningIn {
@@ -779,47 +680,48 @@ private struct AppleIDStep: View {
                         } else {
                             Image(systemName: "key.fill")
                         }
-                        Text(NSLocalizedString("Mit Apple-ID anmelden", comment: ""))
+                        Text(NSLocalizedString("Sign in with your Apple ID", comment: ""))
                     }
                     .font(.brand(16, .semibold))
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
-                    .frame(minHeight: 52)
+                    .frame(minHeight: 54)
                     .background(Color.brand)
                     .clipShape(Capsule())
-                    .shadow(color: Color.brand.opacity(0.3), radius: 12, x: 0, y: 4)
                 }
                 .disabled(isSigningIn)
 
                 if let errorMessage {
-                    Text(errorMessage)
-                        .font(.footnote)
-                        .foregroundColor(.danger)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 16)
+                    HStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundColor(.danger)
+                        Text(errorMessage)
+                            .font(.footnote)
+                            .foregroundColor(.danger)
+                    }
                 }
             }
-            .frame(maxWidth: 420)
-            .padding(.horizontal, 24)
         }
+        .frame(maxWidth: 420)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 24)
     }
 
     private var bottomButtons: some View {
         VStack(spacing: 12) {
             SwiftUI.Button(action: onNext) {
-                Text(NSLocalizedString("Weiter", comment: ""))
+                Text(NSLocalizedString("Continue", comment: ""))
                     .font(.brand(17, .semibold))
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
-                    .frame(minHeight: 52)
+                    .frame(minHeight: 54)
                     .background(isAuthenticated ? Color.brand : Color.brand.opacity(0.35))
                     .clipShape(Capsule())
-                    .shadow(color: isAuthenticated ? Color.brand.opacity(0.3) : Color.clear, radius: 12, x: 0, y: 4)
             }
             .disabled(!isAuthenticated && !isSigningIn)
 
             SwiftUI.Button(action: onNext) {
-                Text(NSLocalizedString("Später einrichten", comment: ""))
+                Text(NSLocalizedString("Set up later", comment: ""))
                     .font(.brand(15, .semibold))
                     .foregroundColor(.inkSoft)
             }
@@ -870,7 +772,10 @@ private struct CompleteStep: View {
         VStack(spacing: 20) {
             Spacer()
 
-            heroIcon
+            StepIconTile(
+                symbol: hasPairingFile ? "checkmark.circle.fill" : "exclamationmark.triangle.fill",
+                color: hasPairingFile ? .success : .warning
+            )
 
             headerTexts
 
@@ -882,60 +787,48 @@ private struct CompleteStep: View {
         }
     }
 
-    private var heroIcon: some View {
-        ZStack {
-            HeroGlow(color: hasPairingFile ? .success : .warning)
-
-            Image(systemName: hasPairingFile ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 80, height: 80)
-                .foregroundColor(hasPairingFile ? .success : .warning)
-        }
-    }
-
     private var headerTexts: some View {
-        VStack(spacing: 8) {
+        VStack(alignment: .leading, spacing: 8) {
             Text(hasPairingFile
-                ? NSLocalizedString("Alles bereit!", comment: "")
-                : NSLocalizedString("Einrichtung unvollständig", comment: ""))
-                .font(.brand(32, .extrabold))
+                ? NSLocalizedString("All Done!", comment: "")
+                : NSLocalizedString("Setup Incomplete", comment: ""))
+                .font(.brand(30, .extrabold))
                 .foregroundColor(.ink)
-                .multilineTextAlignment(.center)
 
             Text(hasPairingFile
-                ? NSLocalizedString("Die Einrichtung ist abgeschlossen. Du kannst jetzt Apps installieren und auffrischen.", comment: "")
-                : NSLocalizedString("Du kannst den spanani Store öffnen, aber eine Pairing-Datei ist erforderlich, um Apps zu installieren oder aufzufrischen.", comment: ""))
+                ? NSLocalizedString("Setup is complete. You can now install and refresh apps.", comment: "")
+                : NSLocalizedString("You can open spanani Store, but a pairing file is required to install or refresh apps.", comment: ""))
                 .font(.system(size: 15))
                 .foregroundColor(.inkSoft)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 24)
         }
+        .frame(maxWidth: 420)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 24)
     }
 
     private var summaryCard: some View {
         VStack(spacing: 14) {
             summaryRow(
-                title: NSLocalizedString("Pairing-Datei", comment: ""),
+                title: NSLocalizedString("Pairing File", comment: ""),
                 isConfigured: hasPairingFile,
-                warning: NSLocalizedString("Erforderlich vor dem Installieren oder Auffrischen von Apps", comment: "")
+                warning: NSLocalizedString("Required before installing or refreshing apps", comment: "")
             )
 
             Divider()
-                .overlay(Color.white.opacity(0.08))
+                .overlay(Color.paperSunk)
 
             summaryRow(
-                title: NSLocalizedString("Apple-ID", comment: ""),
+                title: NSLocalizedString("Apple ID", comment: ""),
                 isConfigured: isAuthenticated,
-                warning: NSLocalizedString("Kann jederzeit in den Einstellungen hinzugefügt werden", comment: "")
+                warning: NSLocalizedString("Can be added anytime in Settings", comment: "")
             )
         }
         .padding(18)
         .background(Color.paperRaised)
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: SpananiRadius.surface, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+            RoundedRectangle(cornerRadius: SpananiRadius.surface, style: .continuous)
+                .stroke(Color.paperSunk, lineWidth: 1)
         )
         .frame(maxWidth: 420)
         .padding(.horizontal, 20)
@@ -953,11 +846,11 @@ private struct CompleteStep: View {
                     .foregroundColor(.ink)
 
                 if isConfigured {
-                    Text(NSLocalizedString("Konfiguriert", comment: ""))
+                    Text(NSLocalizedString("Configured", comment: ""))
                         .font(.system(size: 13, weight: .medium))
                         .foregroundColor(.success)
                 } else {
-                    Text(NSLocalizedString("Nicht konfiguriert", comment: ""))
+                    Text(NSLocalizedString("Not configured", comment: ""))
                         .font(.system(size: 13, weight: .medium))
                         .foregroundColor(.warning)
 
@@ -973,14 +866,13 @@ private struct CompleteStep: View {
 
     private var finishButton: some View {
         SwiftUI.Button(action: onFinish) {
-            Text(NSLocalizedString("spanani Store öffnen", comment: ""))
+            Text(NSLocalizedString("Done", comment: ""))
                 .font(.brand(17, .semibold))
                 .foregroundColor(.white)
                 .frame(maxWidth: .infinity)
-                .frame(minHeight: 52)
+                .frame(minHeight: 54)
                 .background(Color.brand)
                 .clipShape(Capsule())
-                .shadow(color: Color.brand.opacity(0.3), radius: 12, x: 0, y: 4)
         }
         .frame(maxWidth: 420)
         .padding(.horizontal, 20)

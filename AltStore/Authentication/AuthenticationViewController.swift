@@ -117,9 +117,6 @@ private struct AuthenticationView: View
             Color.paper
                 .ignoresSafeArea()
 
-            GradientBackdrop(tint: .brand)
-                .ignoresSafeArea()
-
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: 20) {
                     self.topBar
@@ -149,10 +146,10 @@ private struct AuthenticationView: View
     private var topBar: some View
     {
         HStack {
-            Button {
+            SwiftUI.Button {
                 self.viewModel.cancel()
             } label: {
-                Text("Schließen")
+                Text(NSLocalizedString("Close", comment: ""))
                     .font(.brand(14, .semibold))
                     .foregroundColor(.inkSoft)
                     .padding(.horizontal, 16)
@@ -160,7 +157,7 @@ private struct AuthenticationView: View
                     .background(Color.paperRaised)
                     .clipShape(Capsule())
                     .overlay(
-                        Capsule().stroke(Color.white.opacity(0.08), lineWidth: 1)
+                        Capsule().stroke(Color.paperSunk, lineWidth: 1)
                     )
             }
             .buttonStyle(.plain)
@@ -171,41 +168,20 @@ private struct AuthenticationView: View
 
     private var headerSection: some View
     {
-        VStack(spacing: 16) {
-            self.brandChip
+        VStack(alignment: .leading, spacing: 16) {
+            Mark3DTile(size: 88)
 
-            VStack(spacing: 8) {
-                Text("Mit Apple-ID anmelden")
+            VStack(alignment: .leading, spacing: 8) {
+                Text(NSLocalizedString("Sign in with your Apple ID", comment: ""))
                     .font(.brand(30, .extrabold))
                     .foregroundColor(.ink)
-                    .multilineTextAlignment(.center)
 
-                Text("Damit der Store Apps auf deinem iPhone signieren kann.")
+                Text(NSLocalizedString("Used to sign apps for this device.", comment: ""))
                     .font(.system(size: 15))
                     .foregroundColor(.inkSoft)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 16)
             }
         }
-        .frame(maxWidth: .infinity)
-    }
-
-    private var brandChip: some View
-    {
-        ZStack {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color.brand)
-                .frame(width: 72, height: 72)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .stroke(Color.white.opacity(0.18), lineWidth: 1)
-                )
-                .shadow(color: Color.brand.opacity(0.35), radius: 14, x: 0, y: 6)
-
-            SpananiMark()
-                .foregroundColor(.white)
-                .frame(width: 44, height: 44)
-        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var fieldsSection: some View
@@ -219,11 +195,11 @@ private struct AuthenticationView: View
     private var appleIDField: some View
     {
         VStack(alignment: .leading, spacing: 6) {
-            Text("APPLE-ID")
+            Text("APPLE ID")
                 .font(.brand(12, .semibold))
                 .foregroundColor(.inkFaint)
 
-            TextField("name@beispiel.de", text: self.$viewModel.email)
+            TextField("name@example.com", text: self.$viewModel.email)
                 .font(.system(size: 16))
                 .foregroundColor(.ink)
                 .keyboardType(.emailAddress)
@@ -239,11 +215,11 @@ private struct AuthenticationView: View
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .background(Color.paperRaised)
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .stroke(
-                    self.focusedField == .email ? Color.brand.opacity(0.55) : Color.white.opacity(0.08),
+                    self.focusedField == .email ? Color.brand : Color.paperSunk,
                     lineWidth: 1
                 )
         )
@@ -252,11 +228,11 @@ private struct AuthenticationView: View
     private var passwordField: some View
     {
         VStack(alignment: .leading, spacing: 6) {
-            Text("PASSWORT")
+            Text("PASSWORD")
                 .font(.brand(12, .semibold))
                 .foregroundColor(.inkFaint)
 
-            SecureField("Passwort", text: self.$viewModel.password)
+            SecureField(NSLocalizedString("Password", comment: ""), text: self.$viewModel.password)
                 .font(.system(size: 16))
                 .foregroundColor(.ink)
                 .textContentType(.password)
@@ -272,11 +248,11 @@ private struct AuthenticationView: View
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .background(Color.paperRaised)
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .stroke(
-                    self.focusedField == .password ? Color.brand.opacity(0.55) : Color.white.opacity(0.08),
+                    self.focusedField == .password ? Color.brand : Color.paperSunk,
                     lineWidth: 1
                 )
         )
@@ -284,35 +260,30 @@ private struct AuthenticationView: View
 
     private func errorCard(message: String) -> some View
     {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 8) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(.danger)
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundColor(.danger)
 
-                Text("Anmeldung fehlgeschlagen")
+            VStack(alignment: .leading, spacing: 2) {
+                Text(NSLocalizedString("Sign-in failed", comment: ""))
                     .font(.brand(15, .semibold))
                     .foregroundColor(.danger)
-            }
 
-            Text(message)
-                .font(.system(size: 13))
-                .foregroundColor(.inkSoft)
-                .fixedSize(horizontal: false, vertical: true)
+                if !message.isEmpty {
+                    Text(message)
+                        .font(.system(size: 13))
+                        .foregroundColor(.danger)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(Color.danger.opacity(0.12))
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(Color.danger.opacity(0.28), lineWidth: 1)
-        )
     }
 
     private var submitSection: some View
     {
-        Button {
+        SwiftUI.Button {
             self.focusedField = nil
             self.viewModel.authenticate()
         } label: {
@@ -325,7 +296,7 @@ private struct AuthenticationView: View
                         .font(.system(size: 18, weight: .semibold))
                 }
 
-                Text(self.viewModel.isAuthenticated ? "Angemeldet" : "Anmelden")
+                Text(self.viewModel.isAuthenticated ? NSLocalizedString("Signed In", comment: "") : NSLocalizedString("Sign In", comment: ""))
                     .font(.brand(17, .semibold))
                     .foregroundColor(.white)
             }
@@ -333,7 +304,6 @@ private struct AuthenticationView: View
             .frame(minHeight: 54)
             .background(self.buttonBackground)
             .clipShape(Capsule())
-            .shadow(color: self.buttonShadowColor, radius: 12, x: 0, y: 4)
         }
         .disabled(!self.viewModel.canSubmit && !self.viewModel.isAuthenticated)
         .buttonStyle(.plain)
@@ -350,17 +320,6 @@ private struct AuthenticationView: View
         }
     }
 
-    private var buttonShadowColor: Color
-    {
-        if self.viewModel.isAuthenticated {
-            return Color.success.opacity(0.3)
-        } else if self.viewModel.canSubmit {
-            return Color.brand.opacity(0.3)
-        } else {
-            return Color.clear
-        }
-    }
-
     private var infoCard: some View
     {
         VStack(alignment: .leading, spacing: 8) {
@@ -369,12 +328,12 @@ private struct AuthenticationView: View
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.brand)
 
-                Text("Warum brauchen wir das?")
+                Text(NSLocalizedString("Why is this needed?", comment: ""))
                     .font(.brand(14, .semibold))
                     .foregroundColor(.ink)
             }
 
-            Text("Mit deiner Apple-ID richten wir Apps auf diesem Gerät ein. Deine Zugangsdaten werden sicher im Schlüsselbund gespeichert und nur an Apple gesendet.")
+            Text(NSLocalizedString("Used to sign apps for this device. Your credentials are stored in the Keychain and only sent to Apple.", comment: ""))
                 .font(.system(size: 13))
                 .foregroundColor(.inkSoft)
                 .fixedSize(horizontal: false, vertical: true)
@@ -382,11 +341,11 @@ private struct AuthenticationView: View
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
-        .background(Color.paperRaised.opacity(0.65))
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(Color.paperRaised)
+        .clipShape(RoundedRectangle(cornerRadius: SpananiRadius.surface, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+            RoundedRectangle(cornerRadius: SpananiRadius.surface, style: .continuous)
+                .stroke(Color.paperSunk, lineWidth: 1)
         )
     }
 }
