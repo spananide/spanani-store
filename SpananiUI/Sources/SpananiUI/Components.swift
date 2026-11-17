@@ -231,7 +231,7 @@ struct InstallButton: View {
         case .updateAvailable:
             Text("Update")
                 .font(.brand(fontSize, .semibold))
-                .foregroundColor(.white)
+                .foregroundColor(.paperSunk)
                 .padding(.horizontal, 16)
                 .frame(minHeight: minHeight)
                 .background(Color.accent)
