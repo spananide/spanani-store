@@ -11,14 +11,6 @@ import WidgetKit
 
 import GameplayKit
 
-private extension Color
-{
-    static let altGradientLight = Color.init(.displayP3, red: 219.0/255.0, green: 38.0/255.0, blue: 200.0/255.0)
-    static let altGradientDark = Color.init(.displayP3, red: 135.0/255.0, green: 22.0/255.0, blue: 232.0/255.0)
-    
-    static let altGradientExtraDark = Color.init(.displayP3, red: 58.0/255.0, green: 8.0/255.0, blue: 135.0/255.0)
-}
-
 struct WidgetTag: WidgetInfo{
     let ID: Int?
 }
@@ -92,21 +84,21 @@ private struct ActiveAppsWidgetView: View
                 content
             }
         }
-        .foregroundStyle(.white)
+        .foregroundStyle(Color.spananiPrimaryText)
         .containerBackground(for: .widget) {
-            if colorScheme == .dark
-            {
-                LinearGradient(colors: [.altGradientDark, .altGradientExtraDark], startPoint: .top, endPoint: .bottom)
-            }
-            else if renderingMode == .accented
+            if renderingMode == .accented
             {
                 // Plain dark background in tinted mode so the system's
                 // accent colour composites cleanly over it.
                 Color.black
             }
+            else if colorScheme == .dark
+            {
+                Color.spananiWidgetBackgroundDark
+            }
             else
             {
-                LinearGradient(colors: [.altGradientLight, .altGradientDark], startPoint: .top, endPoint: .bottom)
+                Color.spananiWidgetBackgroundLight
             }
         }
     }
@@ -144,16 +136,21 @@ private struct ActiveAppsWidgetView: View
                             // brightness into opacity so the system can tint it with the user's
                             // chosen accent colour. widgetAccentable() opts the view into that
                             // accent group. In fullColor mode both are no-ops (via the helpers).
+                            // Hairline outline needs proper testing on physical device.
                             Image(uiImage: resizedIcon)
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
                                 .luminanceToAlphaInAccentedMode()
                                 .mask(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                                        .strokeBorder(Color.primary.opacity(0.15), lineWidth: 1.5)
+                                )
                                 .widgetAccentableIfAvailable()
                             
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(app.name)
-                                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                                    .font(.system(.subheadline, weight: .semibold))
                                 
                                 let text = if entry.date > app.expirationDate
                                 {
@@ -165,7 +162,7 @@ private struct ActiveAppsWidgetView: View
                                 }
                                 
                                 text
-                                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                                    .font(.system(.caption, weight: .semibold))
                                     .foregroundStyle(.secondary)
                             }
                             .widgetAccentableIfAvailable()
@@ -177,11 +174,11 @@ private struct ActiveAppsWidgetView: View
                                       currentDate: entry.date,
                                       strokeWidth: 3.0) // Slightly thinner circle stroke width
                             .background {
-                                Color.black.opacity(0.1)
+                                Color.primary.opacity(0.08)
                                     .mask(Capsule())
                                     .padding(.all, -5)
                             }
-                            .font(.system(size: 16, weight: .semibold, design: .rounded))
+                            .font(.system(.subheadline, weight: .semibold))
                             .activatesRefreshAllAppsIntent()
                             // this modifier invalidates the view (disables user interaction and shows a blinking effect)
                             .invalidatableContent()
@@ -227,13 +224,12 @@ private struct ActiveAppsWidgetView: View
     
     private var placeholder: some View {
         VStack(spacing: 4) {
-            Text("Open SideStore")
-                .font(.system(.body, design: .rounded))
-                .fontWeight(.semibold)
-                .foregroundColor(Color.white.opacity(0.8))
-            Text("Launch app to update widget")
-                .font(.system(.caption, design: .rounded))
-                .foregroundColor(Color.white.opacity(0.5))
+            Text("No active apps")
+                .font(.system(.body, weight: .semibold))
+                .foregroundStyle(Color.spananiPrimaryText)
+            Text("Open spanani Store to install one.")
+                .font(.system(.caption))
+                .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
         }
         .padding()

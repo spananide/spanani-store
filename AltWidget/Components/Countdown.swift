@@ -8,6 +8,28 @@
 
 import SwiftUI
 import WidgetKit
+import UIKit
+
+// MARK: - Spanani Colors
+
+extension Color {
+    static let spananiWidgetBackgroundDark = Color(red: 0.086, green: 0.071, blue: 0.114)
+    static let spananiWidgetBackgroundLight = Color(red: 0.957, green: 0.949, blue: 0.969)
+    static let spananiAccent = Color(red: 0.6, green: 0.333, blue: 0.906)
+    static let spananiTextLight = Color(red: 0.102, green: 0.086, blue: 0.133)
+
+    static let spananiWidgetBackground = Color(uiColor: UIColor { traitCollection in
+        traitCollection.userInterfaceStyle == .dark
+            ? UIColor(red: 0.086, green: 0.071, blue: 0.114, alpha: 1.0)
+            : UIColor(red: 0.957, green: 0.949, blue: 0.969, alpha: 1.0)
+    })
+
+    static let spananiPrimaryText = Color(uiColor: UIColor { traitCollection in
+        traitCollection.userInterfaceStyle == .dark
+            ? UIColor.white
+            : UIColor(red: 0.102, green: 0.086, blue: 0.133, alpha: 1.0)
+    })
+}
 
 struct Countdown: View
 {
@@ -18,6 +40,7 @@ struct Countdown: View
     var strokeWidth: Double = 4.0
     
     @Environment(\.font) private var font
+    @Environment(\.widgetRenderingMode) private var renderingMode
     
     private var numberOfDays: Int {
         guard let date = self.endDate else { return 0 }
@@ -62,9 +85,14 @@ struct Countdown: View
             .overlay(
                 ZStack {
                     overlay(progress: 1.0)
-                        .opacity(0.3)
+                        .foregroundStyle(Color.primary.opacity(0.18))
                     
-                    overlay(progress: fractionComplete)
+                    if renderingMode == .accented {
+                        overlay(progress: fractionComplete)
+                    } else {
+                        overlay(progress: fractionComplete)
+                            .foregroundStyle(Color.spananiAccent)
+                    }
                 }
             )
     }

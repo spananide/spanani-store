@@ -109,7 +109,7 @@ private struct ComplicationView: View
                 case .text:
                     VStack(spacing: -1) {
                         Text("-")
-                            .font(.system(size: 20.0, weight: .bold, design: .rounded))
+                            .font(.system(size: 20.0, weight: .bold))
                         
                         Text("DAYS")
                             .font(.caption)
@@ -125,7 +125,7 @@ private struct ComplicationView: View
                             .scaleEffect(x: 0.8, y: 0.8)
                         
                         Text("-")
-                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .font(.system(size: 20, weight: .bold))
                             .foregroundColor(Color.black)
                             .blendMode(.destinationOut)
                     }
@@ -144,7 +144,7 @@ private struct ComplicationView: View
                     VStack(spacing: -1) {
                         let fontSize = daysRemaining > 99 ? 18.0 : 20.0
                         Text("\(daysRemaining)")
-                            .font(.system(size: fontSize, weight: .bold, design: .rounded))
+                            .font(.system(size: fontSize, weight: .bold))
                         
                         Text(daysRemaining == 1 ? "DAY" : "DAYS")
                             .font(.caption)
@@ -164,11 +164,11 @@ private struct ComplicationView: View
                         (
                             daysRemaining > 7 ?
                             Text("7+")
-                                .font(.system(size: 18, weight: .bold, design: .rounded))
+                                .font(.system(size: 18, weight: .bold))
                                 .kerning(-2) :
                                 
                             Text("\(daysRemaining)")
-                                .font(.system(size: 20, weight: .bold, design: .rounded))
+                                .font(.system(size: 20, weight: .bold))
                          )
                         .foregroundColor(Color.black)
                         .blendMode(.destinationOut) // Clip text out of image.

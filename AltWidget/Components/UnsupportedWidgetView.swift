@@ -31,15 +31,15 @@ struct UnsupportedTimelineProvider: TimelineProvider {
 struct UnsupportedWidgetView: View {
     let requiredVersion: String
 
+    init(requiredVersion: String = "iOS 17") {
+        self.requiredVersion = requiredVersion
+    }
+
     var body: some View {
         VStack(spacing: 4) {
-            Text("Unsupported iOS")
-                .font(.system(.subheadline, design: .rounded))
-                .fontWeight(.semibold)
-                .foregroundColor(.white)
-            Text("Requires \(requiredVersion) or later")
-                .font(.system(.caption2, design: .rounded))
-                .foregroundColor(Color.white.opacity(0.6))
+            Text("This widget needs iOS 17 or later.")
+                .font(.system(.subheadline, weight: .semibold))
+                .foregroundStyle(Color.spananiPrimaryText)
                 .multilineTextAlignment(.center)
         }
         .padding(8)

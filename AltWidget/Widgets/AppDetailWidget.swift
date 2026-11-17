@@ -59,6 +59,12 @@ private struct AppDetailWidgetView: View
     let date: Date
     let isPlaceholder: Bool
     
+    @Environment(\.colorScheme)
+    private var colorScheme
+
+    @Environment(\.widgetRenderingMode)
+    private var renderingMode
+    
     var body: some View {
         Group {
             if let app = apps.first
@@ -74,8 +80,8 @@ private struct AppDetailWidgetView: View
                                 AppIconView(icon: app.icon, imageHeight: imageHeight)
                                 
                                 Text(app.name.uppercased())
-                                    .font(.system(size: 12, weight: .semibold, design: .rounded))
-                                    .foregroundColor(.white)
+                                    .font(.system(.caption, weight: .semibold))
+                                    .foregroundColor(Color.spananiPrimaryText)
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.5)
                             }
@@ -96,12 +102,12 @@ private struct AppDetailWidgetView: View
                                 
                                 (
                                     Text("Expires in\n")
-                                        .font(.system(size: 13, weight: .semibold, design: .rounded))
-                                        .foregroundColor(Color.white.opacity(0.45)) +
+                                        .font(.system(.caption, weight: .semibold))
+                                        .foregroundColor(.secondary) +
                                     
                                     expirationText
-                                        .font(.system(size: 15, weight: .semibold, design: .rounded))
-                                        .foregroundColor(.white)
+                                        .font(.system(.subheadline, weight: .semibold))
+                                        .foregroundColor(Color.spananiPrimaryText)
                                 )
                                 .lineLimit(2)
                                 .lineSpacing(1.0)
@@ -114,9 +120,7 @@ private struct AppDetailWidgetView: View
                                     Countdown(startDate: app.refreshedDate,
                                               endDate: app.expirationDate,
                                               currentDate: date)
-                                        .font(.system(size: 20, weight: .semibold, design: .rounded))
-                                        .foregroundColor(Color.white)
-                                        .opacity(0.8)
+                                        .font(.system(.title3, weight: .semibold))
                                         .fixedSize(horizontal: true, vertical: false)
                                         .offset(x: 5)
                                         .invalidatableContentIfAvailable()
@@ -133,13 +137,12 @@ private struct AppDetailWidgetView: View
             else
             {
                 VStack(spacing: 4) {
-                    Text("Open SideStore")
-                        .font(.system(.subheadline, design: .rounded))
-                        .fontWeight(.semibold)
-                        .foregroundColor(Color.white.opacity(0.8))
-                    Text("Launch app to update widget")
-                        .font(.system(.caption2, design: .rounded))
-                        .foregroundColor(Color.white.opacity(0.5))
+                    Text("No active apps")
+                        .font(.system(.subheadline, weight: .semibold))
+                        .foregroundStyle(Color.spananiPrimaryText)
+                    Text("Open spanani Store to install one.")
+                        .font(.system(.caption2))
+                        .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                 }
                 .padding()
@@ -147,61 +150,21 @@ private struct AppDetailWidgetView: View
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .widgetBackground(
-            backgroundView(
-                icon: apps.first?.icon,
-                tintColor: apps.first?.tintColor
-            )
-        )
+        .foregroundStyle(Color.spananiPrimaryText)
+        .widgetBackground(backgroundView)
         .onAppear {
             debugLog("[AppDetailWidgetView] onAppear: isPlaceholder=\(isPlaceholder), appsCount=\(apps.count), firstApp=\(apps.first?.name ?? "none"), date=\(date)")
         }
     }
 
-    func backgroundView(icon: UIImage? = nil, tintColor: UIColor? = nil) -> some View
-    {
-        let defaultIcon = UIImage(named: "SideStore") ?? UIImage(systemName: "app.fill")!
-        let icon = icon ?? defaultIcon
-        let tintColor = tintColor ?? .gray
-        
-        let imageHeight = 60 as CGFloat
-        let saturation = 1.8
-        let blurRadius = 5 as CGFloat
-        let tintOpacity = 0.45
-        
-        // 1024x1024 images are not supported by previews but supported by device
-        // so we scale the image to 97% so as to reduce its actual size but not too much
-        // to somewhere below value, acceptable by previews ie < 1042x948
-        let scalingFactor = 0.97
-        
-        let resizedSize = CGSize(
-            width:  icon.size.width * scalingFactor,
-            height: icon.size.height * scalingFactor
-        )
-            
-        let resizedIcon = icon.resizing(to: resizedSize) ?? icon
-        
-        return ZStack(alignment: .topTrailing) {
-            // Blurred Image
-            GeometryReader { geometry in
-                ZStack {
-                    Image(uiImage: resizedIcon)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: imageHeight, height: imageHeight, alignment: .center)
-                        .saturation(saturation)
-                        .blur(radius: blurRadius, opaque: true)
-                        .scaleEffect(geometry.size.width / imageHeight, anchor: .center)
-                    
-                    Color(tintColor)
-                        .opacity(tintOpacity)
-                }
-            }
-            
-            Image("Badge")
-                .resizable()
-                .frame(width: 26, height: 26)
-                .padding()
+    @ViewBuilder
+    private var backgroundView: some View {
+        if renderingMode == .accented {
+            Color.black
+        } else if colorScheme == .dark {
+            Color.spananiWidgetBackgroundDark
+        } else {
+            Color.spananiWidgetBackgroundLight
         }
     }
 }
@@ -217,12 +180,17 @@ private struct AppIconView: View
 
     var body: some View {
         let image = icon ?? UIImage(named: "SideStore") ?? UIImage(systemName: "app.fill")!
+        let cornerRadius = imageHeight / 5.0
         Image(uiImage: image)
             .resizable()
             .aspectRatio(CGSize(width: 1, height: 1), contentMode: .fit)
             .frame(height: imageHeight)
             .luminanceToAlphaInAccentedMode()
-            .mask(RoundedRectangle(cornerRadius: imageHeight / 5.0, style: .continuous))
+            .mask(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .strokeBorder(Color.primary.opacity(0.15), lineWidth: 1.5)
+            )
             .widgetAccentableIfAvailable()
     }
 }
