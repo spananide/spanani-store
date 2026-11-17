@@ -53,6 +53,17 @@ final class SpananiBridge: StoreActions {
 
             self.reloadData()
             self.setupContextObservers()
+
+            let activeObserver = NotificationCenter.default.addObserver(
+                forName: UIApplication.didBecomeActiveNotification,
+                object: nil,
+                queue: .main
+            ) { _ in
+                Task {
+                    _ = await AppBootManager.shared.ensureMinimuxerStarted()
+                }
+            }
+            self.notificationObservers.append(activeObserver)
         }
     }
 
@@ -258,6 +269,7 @@ final class SpananiBridge: StoreActions {
     // MARK: - StoreActions Implementation
 
     func install(_ app: StoreItem, progress: @escaping (Double) -> Void) async throws {
+        if let startError = await AppBootManager.shared.ensureMinimuxerStarted() { throw startError }
         // needs proper testing on device
         debugLog("[SpananiBridge] install() requested for: \(app.id)")
         let context = DatabaseManager.shared.viewContext
@@ -342,6 +354,7 @@ final class SpananiBridge: StoreActions {
     }
 
     func refresh(_ app: InstalledItem) async throws {
+        if let startError = await AppBootManager.shared.ensureMinimuxerStarted() { throw startError }
         // needs proper testing on device
         debugLog("[SpananiBridge] refresh() requested for: \(app.id)")
         let context = DatabaseManager.shared.viewContext
@@ -384,6 +397,7 @@ final class SpananiBridge: StoreActions {
     }
 
     func refreshAll(progress: @escaping (Double) -> Void) async throws {
+        if let startError = await AppBootManager.shared.ensureMinimuxerStarted() { throw startError }
         // needs proper testing on device
         debugLog("[SpananiBridge] refreshAll() requested")
         let context = DatabaseManager.shared.viewContext
@@ -682,6 +696,7 @@ final class SpananiBridge: StoreActions {
     // MARK: - Install IPA
 
     func installIPA(_ url: URL, progress: @escaping (Double) -> Void) async throws {
+        if let startError = await AppBootManager.shared.ensureMinimuxerStarted() { throw startError }
         // needs proper testing on device
         debugLog("[SpananiBridge] installIPA() requested for: \(url.path)")
         defer {

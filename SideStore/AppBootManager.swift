@@ -58,6 +58,21 @@ public final class AppBootManager {
             }
         }
     }
+
+    /// Starts minimuxer from the pairing file on disk when it is not running yet (for example the VPN was off at launch).
+    /// Returns the start error, or nil when minimuxer is running / there is nothing to start.
+    public nonisolated func ensureMinimuxerStarted() async -> Error? {
+        if minimuxer.core.isPairingFileLoaded { return nil }
+        _ = PairingFileManager.shared.adoptPlacedPairingFile()
+        guard let pairingFile = PairingFileManager.shared.fetchPairingFile() else { return nil }
+        do {
+            try await self.startMinimuxer(pairingFile: pairingFile)
+            return nil
+        } catch {
+            debugLog("[AppBootManager] ensureMinimuxerStarted() failed: \(error)")
+            return error
+        }
+    }
     
     @MainActor
     public func promptForPairing(on vc: UIViewController) async {

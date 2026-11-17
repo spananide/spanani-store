@@ -324,14 +324,8 @@ private struct PairingFileStep: View {
         #endif
     }
 
-    // The boot sequence only starts minimuxer when a pairing file exists at launch.
-    // If the installer placed the file after the first launch, start it here (once per file state).
-    private static var startedForFile: String?
-
     private func startEngineIfNeeded() {
-        guard let pf = PairingFileManager.shared.fetchPairingFile(), Self.startedForFile != pf else { return }
-        Self.startedForFile = pf
-        Task { try? await AppBootManager.shared.startMinimuxer(pairingFile: pf) }
+        Task { _ = await AppBootManager.shared.ensureMinimuxerStarted() }
     }
 
     private var headerTexts: some View {

@@ -8,6 +8,7 @@
 
 import UIKit
 import SideSign
+import Minimuxer
 
 class SignInFlowHandler: AnyObject, SignInHandler, AnisetteServerHandler {
     
@@ -550,8 +551,19 @@ class SignInFlowHandler: AnyObject, SignInHandler, AnisetteServerHandler {
         }
     }
     
+    private var autoPairingRetryDone = false
+
     @MainActor
     func resolveDeviceRegistrationErrors(_ error: Error) async -> ProvisioningErrorDecision {
+        var startError: Error?
+        if !autoPairingRetryDone {
+            autoPairingRetryDone = true
+            startError = await AppBootManager.shared.ensureMinimuxerStarted()
+            if startError == nil && minimuxer.core.isPairingFileLoaded {
+                return .retry
+            }
+        }
+
         let title: String
         if error is OperationError {
             title = NSLocalizedString("Geräteregistrierungsfehler", comment: "")
@@ -559,10 +571,12 @@ class SignInFlowHandler: AnyObject, SignInHandler, AnisetteServerHandler {
             title = NSLocalizedString("Entwicklerportal-Fehler", comment: "")
         }
 
+        let shownError: Error = startError ?? error
+
         return await withCheckedContinuation { continuation in
             let alertController = UIAlertController(
                 title: title,
-                message: error.localizedDescription,
+                message: shownError.localizedDescription,
                 preferredStyle: .alert
             )
             
