@@ -39,7 +39,8 @@ public final class AppBootManager {
             try await startEMProxy()
         }
 
-        let preferred = PairingFileManager.shared.preferredProtocol
+        // A file with both Remote Pairing and Lockdown credentials is "ambiguous" without a preferred protocol.
+        let preferred = PairingFileManager.shared.preferredProtocol ?? PairingFileManager.shared.persistedActiveProtocol
         try await minimuxerStart(pairingFile, preferred: preferred)
         
         // Validate the pairing by trying to fetch the UDID
@@ -70,6 +71,13 @@ public final class AppBootManager {
             return nil
         } catch {
             debugLog("[AppBootManager] ensureMinimuxerStarted() failed: \(error)")
+            // Remote Pairing needs the VPN and iOS 17+; fall back to the lockdown file when there is one.
+            if PairingFileManager.shared.persistedActiveProtocol == .rppairing,
+               let lockdownFile = PairingFileManager.shared.fetchPairingFile(for: .lockdown) {
+                PairingFileManager.shared.persistedActiveProtocol = .lockdown
+                if (try? await self.startMinimuxer(pairingFile: lockdownFile)) != nil { return nil }
+                PairingFileManager.shared.persistedActiveProtocol = .rppairing
+            }
             return error
         }
     }
