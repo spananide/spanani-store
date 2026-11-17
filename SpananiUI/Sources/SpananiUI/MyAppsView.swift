@@ -2,7 +2,10 @@ import SwiftUI
 
 struct MyAppsView: View {
     @EnvironmentObject private var model: StoreModel
+    var selectedApp: Binding<StoreItem?>? = nil
     var onNavigateToTab: ((Int) -> Void)? = nil
+
+    @State private var internalSelectedApp: StoreItem? = nil
 
     private var appsWithUpdates: [InstalledItem] {
         model.installed.filter { $0.hasUpdate }
@@ -16,7 +19,11 @@ struct MyAppsView: View {
                 if model.installed.isEmpty {
                     emptyStateView
                 } else {
-                    SummaryCardView()
+                    CountdownHeroView()
+
+                    if !model.favoriteApps.isEmpty {
+                        favoritesSection
+                    }
 
                     if !appsWithUpdates.isEmpty {
                         updatesSection
@@ -29,6 +36,11 @@ struct MyAppsView: View {
             .padding(.bottom, 140)
         }
         .background(Color.paper)
+        .sheet(item: $internalSelectedApp) { app in
+            AppDetailView(app: app)
+                .environmentObject(model)
+                .presentationDragIndicator(.visible)
+        }
     }
 
     // MARK: - Header Section
@@ -36,12 +48,8 @@ struct MyAppsView: View {
     private var headerSection: some View {
         HStack(alignment: .bottom) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("Übersicht")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(.inkSoft)
-
-                Text("Meine Apps")
-                    .font(.brand(38, .extrabold))
+                Text("My Apps")
+                    .font(.brand(34, .extrabold))
                     .foregroundColor(.ink)
             }
 
@@ -50,17 +58,59 @@ struct MyAppsView: View {
         .padding(.horizontal, 20)
     }
 
+    // MARK: - Favorites Section
+
+    private var favoritesSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            SectionHeader(title: "Favourites", count: model.favoriteApps.count)
+                .padding(.horizontal, 20)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 16) {
+                    ForEach(model.favoriteApps) { app in
+                        Button {
+                            if let binding = selectedApp {
+                                binding.wrappedValue = app
+                            } else {
+                                internalSelectedApp = app
+                            }
+                        } label: {
+                            VStack(spacing: 8) {
+                                AppIconView(
+                                    tint: app.tint,
+                                    symbol: app.symbol,
+                                    iconURL: app.iconURL,
+                                    size: 72
+                                )
+
+                                Text(app.name)
+                                    .font(.brand(13, .semibold))
+                                    .foregroundColor(.ink)
+                                    .lineLimit(1)
+                                    .frame(width: 76)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .contextMenu {
+                            Button {
+                                model.toggleFavorite(app.id)
+                            } label: {
+                                Label("Remove from Favourites", systemImage: "star.slash")
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal, 20)
+            }
+        }
+    }
+
     // MARK: - Updates Section
 
     private var updatesSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            SectionHeader(
-                title: "Updates",
-                subtitle: appsWithUpdates.count == 1
-                    ? "1 Aktualisierung verfügbar"
-                    : "\(appsWithUpdates.count) Aktualisierungen verfügbar"
-            )
-            .padding(.horizontal, 20)
+            SectionHeader(title: "Updates", count: appsWithUpdates.count)
+                .padding(.horizontal, 20)
 
             VStack(spacing: 0) {
                 ForEach(appsWithUpdates) { item in
@@ -75,13 +125,8 @@ struct MyAppsView: View {
 
     private var installedSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            SectionHeader(
-                title: "Installiert",
-                subtitle: model.installed.count == 1
-                    ? "1 App auf diesem Gerät"
-                    : "\(model.installed.count) Apps auf diesem Gerät"
-            )
-            .padding(.horizontal, 20)
+            SectionHeader(title: "Installed", count: model.installed.count)
+                .padding(.horizontal, 20)
 
             VStack(spacing: 0) {
                 ForEach(model.installed) { item in
@@ -97,20 +142,15 @@ struct MyAppsView: View {
     private var emptyStateView: some View {
         VStack(spacing: 16) {
             Spacer()
-                .frame(height: 40)
+                .frame(height: 32)
 
-            SpananiLogo.markImage()
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 80, height: 80)
-                .foregroundColor(.brand)
-                .opacity(0.8)
+            Mark3DTile(size: 120)
 
-            Text("Noch nichts installiert")
+            Text("Nothing installed yet")
                 .font(.brand(24, .extrabold))
                 .foregroundColor(.ink)
 
-            Text("Lade Apps aus dem Katalog herunter, um sie direkt auf deinem Gerät auszuführen.")
+            Text("Get an app from Discover and it shows up here with a countdown.")
                 .font(.system(size: 14))
                 .foregroundColor(.inkSoft)
                 .multilineTextAlignment(.center)
@@ -120,11 +160,11 @@ struct MyAppsView: View {
                 Haptics.impact(.medium)
                 onNavigateToTab?(0)
             } label: {
-                Text("Zu Entdecken")
+                Text("Browse apps")
                     .font(.brand(15, .semibold))
                     .foregroundColor(.white)
                     .padding(.horizontal, 24)
-                    .padding(.vertical, 12)
+                    .frame(height: 48)
                     .background(Color.brand)
                     .clipShape(Capsule())
             }
@@ -136,135 +176,117 @@ struct MyAppsView: View {
     }
 }
 
-// MARK: - Summary Card View
+// MARK: - Countdown Hero View
 
-private struct SummaryCardView: View {
+private struct CountdownHeroView: View {
     @EnvironmentObject private var model: StoreModel
 
-    private var soonestDaysLeft: Double {
-        if let soonest = model.soonestExpiringItem {
-            return max(0, soonest.expiresAt.timeIntervalSinceNow / 86400.0)
-        }
-        return 7.0
+    private var soonest: InstalledItem? {
+        model.soonestExpiringItem
     }
 
-    private var soonestText: String {
-        if let soonest = model.soonestExpiringItem {
-            return Formatters.expiryRemainingText(expiresAt: soonest.expiresAt)
+    private var countdownText: String {
+        if let soonest = soonest {
+            return Formatters.countdownText(expiresAt: soonest.expiresAt)
         }
-        return "in 7 Tagen"
+        return "None"
+    }
+
+    private var urgencyColor: Color {
+        if let soonest = soonest {
+            return Formatters.urgencyColor(expiresAt: soonest.expiresAt)
+        }
+        return .ink
+    }
+
+    private var soonestAppName: String {
+        soonest?.name ?? "No apps installed"
     }
 
     var body: some View {
-        ZStack(alignment: .bottomTrailing) {
-            cardBackground
-            cardWatermark
+        VStack(alignment: .leading, spacing: 18) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Next expiry")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.inkSoft)
 
-            VStack(alignment: .leading, spacing: 20) {
-                topRow
-                bottomSlotRow
+                    Text(countdownText)
+                        .font(.brand(56, .extrabold))
+                        .foregroundColor(urgencyColor)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+
+                    Text(soonestAppName)
+                        .font(.system(size: 14))
+                        .foregroundColor(.inkSoft)
+                        .lineLimit(1)
+                }
+
+                Spacer()
+
+                Mark3DTile(size: 56)
             }
-            .padding(20)
+
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 6) {
+                    ForEach(0..<model.activeLimit, id: \.self) { index in
+                        RoundedRectangle(cornerRadius: 4, style: .continuous)
+                            .fill(index < model.activeCount ? Color.brand : Color.paperSunk)
+                            .frame(height: 8)
+                    }
+                }
+
+                Text("\(model.activeCount) of \(model.activeLimit) slots in use")
+                    .font(.brand(13, .semibold))
+                    .foregroundColor(.inkSoft)
+            }
+
+            refreshButtonArea
+
+            Text("Free Apple ID: 3 active apps, 7 days each.")
+                .font(.system(size: 12))
+                .foregroundColor(.inkFaint)
         }
+        .padding(20)
+        .background(Color.paperRaised)
         .clipShape(RoundedRectangle(cornerRadius: SpananiRadius.card, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: SpananiRadius.card, style: .continuous)
-                .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                .stroke(Color.paperSunk, lineWidth: 1)
         )
-        .softShadow(color: Color.black.opacity(0.24), radius: 18, x: 0, y: 8)
         .padding(.horizontal, 20)
     }
 
-    private var cardBackground: some View {
-        LinearGradient(
-            colors: [
-                Color.brand.opacity(0.40),
-                Color.paperRaised
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-    }
-
-    private var cardWatermark: some View {
-        SpananiLogo.markImage()
-            .resizable()
-            .aspectRatio(contentMode: .fit)
-            .frame(width: 170, height: 170)
-            .foregroundColor(.white)
-            .opacity(0.07)
-            .rotationEffect(.degrees(-12))
-            .offset(x: 30, y: 40)
-    }
-
-    private var topRow: some View {
-        HStack(spacing: 16) {
-            ExpiryRing(daysLeft: soonestDaysLeft, size: 84)
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Nächste Auffrischung")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(.inkSoft)
-
-                Text(soonestText)
-                    .font(.brand(24, .extrabold))
-                    .foregroundColor(.ink)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-
-                refreshButton
-            }
-
-            Spacer()
-        }
-    }
-
     @ViewBuilder
-    private var refreshButton: some View {
+    private var refreshButtonArea: some View {
         if let progress = model.refreshProgress {
             HStack(spacing: 8) {
                 ProgressView()
                     .progressViewStyle(CircularProgressViewStyle(tint: .brand))
                     .scaleEffect(0.8)
 
-                Text("Aktualisiere … \(Int(progress * 100)) %")
-                    .font(.brand(13, .semibold))
+                Text("Refreshing … \(Int(progress * 100)) %")
+                    .font(.brand(15, .semibold))
                     .foregroundColor(.brand)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity)
+            .frame(height: 48)
             .background(Color.paperSunk)
             .clipShape(Capsule())
         } else {
             Button {
                 model.refreshAll()
             } label: {
-                Text("Alle auffrischen")
-                    .font(.brand(14, .semibold))
+                Text("Refresh All")
+                    .font(.brand(16, .semibold))
                     .foregroundColor(.white)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 9)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 48)
                     .background(Color.brand)
                     .clipShape(Capsule())
             }
             .buttonStyle(.plain)
-        }
-    }
-
-    private var bottomSlotRow: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Rectangle()
-                .fill(Color.white.opacity(0.08))
-                .frame(height: 1)
-
-            HStack {
-                SlotDots(active: model.activeCount, limit: model.activeLimit)
-                Spacer()
-            }
-
-            Text("Kostenlose Apple-ID: max. 3 aktive Apps, 7 Tage gültig.")
-                .font(.system(size: 11, weight: .regular))
-                .foregroundColor(.inkFaint)
         }
     }
 }
@@ -294,7 +316,7 @@ private struct UpdateAppRowView: View {
                         .font(.brand(16, .semibold))
                         .foregroundColor(.ink)
 
-                    Text("\(item.versionString) → \(item.latestVersion ?? "Neu")")
+                    Text("\(item.versionString) → \(item.latestVersion ?? "New")")
                         .font(.system(size: 13, weight: .medium))
                         .foregroundColor(.accent)
                 }
@@ -339,6 +361,10 @@ private struct InstalledAppRowView: View {
         Formatters.urgencyColor(expiresAt: item.expiresAt)
     }
 
+    private var progressRatio: CGFloat {
+        CGFloat(min(max(daysLeft / 7.0, 0.0), 1.0))
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 14) {
@@ -349,14 +375,14 @@ private struct InstalledAppRowView: View {
                     size: 56
                 )
 
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 6) {
                         Text(item.name)
                             .font(.brand(17, .semibold))
                             .foregroundColor(.ink)
 
                         if !item.isActive {
-                            Text("Inaktiv")
+                            Text("Inactive")
                                 .font(.brand(10, .semibold))
                                 .foregroundColor(.inkFaint)
                                 .padding(.horizontal, 6)
@@ -370,6 +396,16 @@ private struct InstalledAppRowView: View {
                         .font(.system(size: 13, weight: .medium))
                         .foregroundColor(rowUrgencyColor)
 
+                    ZStack(alignment: .leading) {
+                        Capsule()
+                            .fill(Color.paperSunk)
+                            .frame(width: 130, height: 4)
+
+                        Capsule()
+                            .fill(rowUrgencyColor)
+                            .frame(width: max(6, 130 * progressRatio), height: 4)
+                    }
+
                     Text("Version \(item.versionString)")
                         .font(.system(size: 12))
                         .foregroundColor(.inkFaint)
@@ -377,26 +413,24 @@ private struct InstalledAppRowView: View {
 
                 Spacer()
 
-                ExpiryRing(daysLeft: daysLeft, size: 44)
-
                 Menu {
                     Button {
                         model.refresh(item)
                     } label: {
-                        Label("Auffrischen", systemImage: "arrow.clockwise")
+                        Label("Refresh", systemImage: "arrow.clockwise")
                     }
 
                     Button {
                         model.open(item)
                     } label: {
-                        Label("Öffnen", systemImage: "arrow.up.forward.app")
+                        Label("Open", systemImage: "arrow.up.forward.app")
                     }
 
                     Button {
                         model.deactivate(item)
                     } label: {
                         Label(
-                            item.isActive ? "Deaktivieren" : "Aktivieren",
+                            item.isActive ? "Deactivate" : "Activate",
                             systemImage: item.isActive ? "pause.circle" : "play.circle"
                         )
                     }
@@ -404,11 +438,34 @@ private struct InstalledAppRowView: View {
                     Image(systemName: "ellipsis")
                         .font(.system(size: 16, weight: .bold))
                         .foregroundColor(.inkSoft)
-                        .frame(width: 32, height: 32)
+                        .frame(width: 44, height: 44)
                         .contentShape(Rectangle())
                 }
+                .accessibilityLabel("Actions for \(item.name)")
             }
             .padding(.vertical, 12)
+            .contextMenu {
+                Button {
+                    model.refresh(item)
+                } label: {
+                    Label("Refresh", systemImage: "arrow.clockwise")
+                }
+
+                Button {
+                    model.open(item)
+                } label: {
+                    Label("Open", systemImage: "arrow.up.forward.app")
+                }
+
+                Button {
+                    model.deactivate(item)
+                } label: {
+                    Label(
+                        item.isActive ? "Deactivate" : "Activate",
+                        systemImage: item.isActive ? "pause.circle" : "play.circle"
+                    )
+                }
+            }
 
             Rectangle()
                 .fill(Color.paperSunk)

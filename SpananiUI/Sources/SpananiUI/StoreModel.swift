@@ -12,6 +12,9 @@ public protocol StoreActions: AnyObject {
     func removeSource(_ source: SourceItem) async throws
     func refreshSources() async
     func signOut() async
+    func setAutoRefresh(_ enabled: Bool) async
+    func setReminders(_ enabled: Bool) async -> Bool
+    func installIPA(_ url: URL, progress: @escaping (Double) -> Void) async throws
 }
 
 public extension StoreActions {
@@ -19,6 +22,9 @@ public extension StoreActions {
     func removeSource(_ source: SourceItem) async throws {}
     func refreshSources() async {}
     func signOut() async {}
+    func setAutoRefresh(_ enabled: Bool) async {}
+    func setReminders(_ enabled: Bool) async -> Bool { enabled }
+    func installIPA(_ url: URL, progress: @escaping (Double) -> Void) async throws {}
 }
 
 @MainActor
@@ -26,9 +32,15 @@ public final class StoreModel: ObservableObject {
     @Published public var apps: [StoreItem]
     @Published public var installed: [InstalledItem]
     @Published public var sources: [SourceItem]
+    @Published public var changes: [ChangeItem]
+    @Published public var favorites: Set<String>
+    @Published public var autoRefreshEnabled: Bool
+    @Published public var remindersEnabled: Bool
     @Published public var account: AccountInfo
     @Published public var installStates: [String: InstallState]
     @Published public var refreshProgress: Double?
+    @Published public var ipaProgress: Double?
+    @Published public var ipaName: String?
     @Published public var activeLimit: Int
     @Published public var lastError: String?
 
@@ -38,19 +50,44 @@ public final class StoreModel: ObservableObject {
         apps: [StoreItem] = [],
         installed: [InstalledItem] = [],
         sources: [SourceItem] = [],
+        changes: [ChangeItem] = [],
         account: AccountInfo = AccountInfo(),
         activeLimit: Int = 3,
+        favorites: Set<String>? = nil,
+        autoRefreshEnabled: Bool = true,
+        remindersEnabled: Bool? = nil,
         actions: StoreActions? = nil
     ) {
         self.apps = apps
         self.installed = installed
         self.sources = sources
+        self.changes = changes
         self.account = account
         self.installStates = [:]
         self.refreshProgress = nil
+        self.ipaProgress = nil
+        self.ipaName = nil
         self.activeLimit = activeLimit
         self.lastError = nil
         self.actions = actions
+        self.autoRefreshEnabled = autoRefreshEnabled
+
+        if let favorites = favorites {
+            self.favorites = favorites
+        } else {
+            let stored = UserDefaults.standard.stringArray(forKey: "spanani.favorites") ?? []
+            self.favorites = Set(stored)
+        }
+
+        if let remindersEnabled = remindersEnabled {
+            self.remindersEnabled = remindersEnabled
+        } else {
+            if UserDefaults.standard.object(forKey: "spanani.reminders") != nil {
+                self.remindersEnabled = UserDefaults.standard.bool(forKey: "spanani.reminders")
+            } else {
+                self.remindersEnabled = true
+            }
+        }
     }
 
     public var categories: [String] {
@@ -79,6 +116,72 @@ public final class StoreModel: ObservableObject {
 
     public var soonestExpiringItem: InstalledItem? {
         installed.min(by: { $0.expiresAt < $1.expiresAt })
+    }
+
+    public var favoriteApps: [StoreItem] {
+        apps.filter { favorites.contains($0.id) }
+    }
+
+    public func isFavorite(_ id: String) -> Bool {
+        favorites.contains(id)
+    }
+
+    public func toggleFavorite(_ id: String) {
+        if favorites.contains(id) {
+            favorites.remove(id)
+        } else {
+            favorites.insert(id)
+        }
+        UserDefaults.standard.set(Array(favorites), forKey: "spanani.favorites")
+        Haptics.selection()
+    }
+
+    public func setAutoRefresh(_ on: Bool) {
+        autoRefreshEnabled = on
+        Task {
+            await actions?.setAutoRefresh(on)
+        }
+    }
+
+    public func setReminders(_ on: Bool) {
+        Haptics.selection()
+        Task {
+            let result = await actions?.setReminders(on) ?? on
+            remindersEnabled = result
+            UserDefaults.standard.set(result, forKey: "spanani.reminders")
+            if result != on {
+                lastError = "Notifications are turned off for this app. Enable them in iOS Settings."
+            }
+        }
+    }
+
+    public func installIPA(_ url: URL) {
+        ipaName = url.lastPathComponent
+        ipaProgress = 0
+        Haptics.impact(.medium)
+        Task {
+            do {
+                if let actions = self.actions {
+                    try await actions.installIPA(url) { [weak self] progress in
+                        Task { @MainActor in
+                            self?.ipaProgress = progress
+                        }
+                    }
+                } else {
+                    let steps = 10
+                    for step in 1...steps {
+                        try? await Task.sleep(nanoseconds: 200_000_000)
+                        self.ipaProgress = Double(step) / Double(steps)
+                    }
+                }
+                Haptics.notify(.success)
+            } catch {
+                self.lastError = error.localizedDescription
+                Haptics.notify(.error)
+            }
+            self.ipaProgress = nil
+            self.ipaName = nil
+        }
     }
 
     public func state(for app: StoreItem) -> InstallState {

@@ -280,18 +280,78 @@ public enum DemoData {
         ]
 
         let account = AccountInfo(
-            appleID: "dein.name@icloud.com",
+            appleID: "user@icloud.com",
             isPaired: true,
             vpnOn: true
         )
 
-        return StoreModel(
+        let now = Date()
+        let changes: [ChangeItem] = [
+            ChangeItem(
+                id: "de.spanani.fmhy@1.6.0",
+                appID: "de.spanani.fmhy",
+                appName: "FMHY",
+                tint: Color(red: 0.60, green: 0.33, blue: 0.91),
+                symbol: "link.badge.plus",
+                version: "1.6.0",
+                date: now.addingTimeInterval(-2 * 3600),
+                notes: "Version 1.6.0 introduces an improved link filter, dark mode optimizations, and faster loading times for offline articles."
+            ),
+            ChangeItem(
+                id: "de.spanani.kippe@1.0.4",
+                appID: "de.spanani.kippe",
+                appName: "Tilt",
+                tint: Color(red: 0.95, green: 0.45, blue: 0.25),
+                symbol: "circle.grid.cross.fill",
+                version: "1.0.4",
+                date: now.addingTimeInterval(-5 * 3600),
+                notes: "10 new levels, support for enhanced haptics, and finer gyroscope sensitivity."
+            ),
+            ChangeItem(
+                id: "de.spanani.wetterfrosch@4.1.2",
+                appID: "de.spanani.wetterfrosch",
+                appName: "Weather Frog",
+                tint: Color(red: 0.20, green: 0.60, blue: 0.95),
+                symbol: "cloud.sun.rain.fill",
+                version: "4.1.2",
+                date: now.addingTimeInterval(-26 * 3600),
+                notes: "Minute-by-minute widget updates when severe rain is imminent."
+            ),
+            ChangeItem(
+                id: "de.spanani.pausenklau@2.3.1",
+                appID: "de.spanani.pausenklau",
+                appName: "Break Puzzles",
+                tint: Color(red: 0.25, green: 0.75, blue: 0.85),
+                symbol: "gamecontroller.fill",
+                version: "2.3.1",
+                date: now.addingTimeInterval(-30 * 3600),
+                notes: "New category for number puzzles and synchronized high scores."
+            ),
+            ChangeItem(
+                id: "de.spanani.notizzettel@1.8.4",
+                appID: "de.spanani.notizzettel",
+                appName: "Notes",
+                tint: Color(red: 0.85, green: 0.75, blue: 0.30),
+                symbol: "note.text",
+                version: "1.8.4",
+                date: now.addingTimeInterval(-72 * 3600),
+                notes: "Added support for mathematical formulas and Mermaid diagrams."
+            )
+        ]
+
+        let model = StoreModel(
             apps: apps,
             installed: installed,
             sources: sources,
+            changes: changes,
             account: account,
             activeLimit: 3,
+            favorites: ["de.spanani.fmhy"],
+            autoRefreshEnabled: true,
+            remindersEnabled: true,
             actions: nil
         )
+
+        return model
     }
 }

@@ -27,7 +27,7 @@ public struct SpananiRoot: View {
 
             VStack {
                 Spacer()
-                GlassTabBar(selection: $selectedTab)
+                SpananiTabBar(selection: $selectedTab)
             }
         }
         .environmentObject(model)
@@ -43,6 +43,21 @@ public struct SpananiRoot: View {
                 .environmentObject(model)
                 .presentationDragIndicator(.visible)
         }
+        .alert(
+            "Something went wrong",
+            isPresented: Binding(
+                get: { model.lastError != nil },
+                set: { if !$0 { model.lastError = nil } }
+            )
+        ) {
+            Button("OK") {
+                model.lastError = nil
+            }
+        } message: {
+            if let error = model.lastError {
+                Text(error)
+            }
+        }
     }
 
     @ViewBuilder
@@ -57,6 +72,7 @@ public struct SpananiRoot: View {
             )
         case 1:
             MyAppsView(
+                selectedApp: $selectedAppForDetail,
                 onNavigateToTab: { tabIndex in
                     selectedTab = tabIndex
                 }

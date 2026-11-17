@@ -85,7 +85,9 @@ extension Font {
 
 public enum SpananiRadius {
     public static let card: CGFloat = 28
-    public static let tile: CGFloat = 20
+    public static let surface: CGFloat = 28
+    public static let tile: CGFloat = 16
+    public static let small: CGFloat = 16
     public static let chip: CGFloat = 100
 }
 
@@ -108,30 +110,6 @@ enum Haptics {
         let generator = UINotificationFeedbackGenerator()
         generator.prepare()
         generator.notificationOccurred(type)
-    }
-}
-
-// MARK: - Shadows
-
-struct SoftShadowModifier: ViewModifier {
-    var color: Color
-    var radius: CGFloat
-    var x: CGFloat
-    var y: CGFloat
-
-    func body(content: Content) -> some View {
-        content.shadow(color: color, radius: radius, x: x, y: y)
-    }
-}
-
-extension View {
-    func softShadow(
-        color: Color = Color.black.opacity(0.12),
-        radius: CGFloat = 16,
-        x: CGFloat = 0,
-        y: CGFloat = 6
-    ) -> some View {
-        modifier(SoftShadowModifier(color: color, radius: radius, x: x, y: y))
     }
 }
 

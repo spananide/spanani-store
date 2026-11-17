@@ -1,4 +1,6 @@
 import SwiftUI
+import UIKit
+import UniformTypeIdentifiers
 
 struct DiscoverView: View {
     @EnvironmentObject private var model: StoreModel
@@ -6,8 +8,14 @@ struct DiscoverView: View {
     var onNavigateToTab: ((Int) -> Void)? = nil
 
     @State private var searchText: String = ""
-    @State private var selectedCategory: String = "Alle"
+    @State private var selectedCategory: String = "All"
     @State private var scrolledHeroID: String?
+    @State private var selectedSegment: Int = 0
+
+    @State private var isImporterPresented: Bool = false
+    @State private var isConfirmInstallPresented: Bool = false
+    @State private var pendingIPAURL: URL? = nil
+    @State private var pendingIPAName: String = ""
 
     private var isSearching: Bool {
         !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -24,7 +32,7 @@ struct DiscoverView: View {
     private var filteredApps: [StoreItem] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         if query.isEmpty {
-            if selectedCategory == "Alle" {
+            if selectedCategory == "All" {
                 return model.apps
             } else {
                 return model.apps.filter { $0.category == selectedCategory }
@@ -38,24 +46,30 @@ struct DiscoverView: View {
         }
     }
 
-    private var railApps: [StoreItem] {
-        if selectedCategory == "Alle" {
-            return model.recent
-        } else {
-            return model.apps.filter { $0.category == selectedCategory }
-        }
-    }
-
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: 20) {
                 headerSection
-                searchSection
+                searchAndIPARow
 
-                if isSearching {
-                    searchResultsSection
+                if let progress = model.ipaProgress {
+                    ipaProgressBanner(progress: progress)
+                }
+
+                SegmentSwitch(
+                    options: ["Apps", "Changes"],
+                    selection: $selectedSegment
+                )
+                .padding(.horizontal, 20)
+
+                if selectedSegment == 0 {
+                    if isSearching {
+                        searchResultsSection
+                    } else {
+                        appsDiscoveryContent
+                    }
                 } else {
-                    mainDiscoveryContent
+                    changesContent
                 }
             }
             .padding(.top, 16)
@@ -65,6 +79,25 @@ struct DiscoverView: View {
             await model.reloadSources()
         }
         .background(Color.paper)
+        .fileImporter(
+            isPresented: $isImporterPresented,
+            allowedContentTypes: [UTType(filenameExtension: "ipa") ?? .data],
+            allowsMultipleSelection: false
+        ) { result in
+            handleFileImporter(result: result)
+        }
+        .confirmationDialog(
+            "Install \(pendingIPAName)?",
+            isPresented: $isConfirmInstallPresented,
+            titleVisibility: .visible
+        ) {
+            Button("Install") {
+                if let url = pendingIPAURL {
+                    model.installIPA(url)
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        }
     }
 
     // MARK: - Header Section
@@ -72,124 +105,154 @@ struct DiscoverView: View {
     private var headerSection: some View {
         HStack(alignment: .bottom) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(Formatters.germanDate())
+                Text(Formatters.englishDate())
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.inkSoft)
 
-                Text("Entdecken")
-                    .font(.brand(38, .extrabold))
+                Text("Discover")
+                    .font(.brand(34, .extrabold))
                     .foregroundColor(.ink)
             }
 
             Spacer()
 
-            ZStack {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color.brand)
-                    .frame(width: 44, height: 44)
-                    .shadow(color: Color.brand.opacity(0.35), radius: 8, x: 0, y: 4)
-
-                SpananiLogo.markImage()
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 24, height: 24)
-                    .foregroundColor(.white)
-            }
+            Mark3DTile(size: 44)
         }
         .padding(.horizontal, 20)
     }
 
-    // MARK: - Search Section
+    // MARK: - Search & IPA Install Row
 
-    private var searchSection: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(.inkSoft)
+    private var searchAndIPARow: some View {
+        HStack(spacing: 12) {
+            HStack(spacing: 10) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.inkSoft)
 
-            TextField("Apps suchen", text: $searchText)
-                .font(.system(size: 15))
-                .foregroundColor(.ink)
-                .autocorrectionDisabled(true)
+                TextField("Search apps", text: $searchText)
+                    .font(.system(size: 15))
+                    .foregroundColor(.ink)
+                    .autocorrectionDisabled(true)
 
-            if !searchText.isEmpty {
-                Button {
-                    searchText = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 16))
-                        .foregroundColor(.inkFaint)
+                if !searchText.isEmpty {
+                    Button {
+                        searchText = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 16))
+                            .foregroundColor(.inkFaint)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Clear search")
                 }
-                .buttonStyle(.plain)
             }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(Color.paperSunk)
+            .clipShape(Capsule())
+            .overlay(
+                Capsule()
+                    .stroke(Color.paperSunk, lineWidth: 1)
+            )
+
+            Button {
+                isImporterPresented = true
+            } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(.white)
+                    .frame(width: 44, height: 44)
+                    .background(Color.brand)
+                    .clipShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Install IPA")
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .background(Color.paperSunk)
-        .clipShape(Capsule())
+        .padding(.horizontal, 20)
+    }
+
+    // MARK: - IPA Progress Banner
+
+    private func ipaProgressBanner(progress: Double) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Installing \(model.ipaName ?? "IPA") · \(Int(progress * 100)) %")
+                    .font(.brand(14, .semibold))
+                    .foregroundColor(.brand)
+                Spacer()
+            }
+
+            ProgressView(value: progress)
+                .progressViewStyle(LinearProgressViewStyle(tint: .brand))
+        }
+        .padding(14)
+        .background(Color.paperRaised)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
-            Capsule()
-                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(Color.paperSunk, lineWidth: 1)
         )
         .padding(.horizontal, 20)
     }
 
-    // MARK: - Search Results Section
+    // MARK: - Apps Discovery Content
 
-    private var searchResultsSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            SectionHeader(
-                title: "Ergebnisse",
-                subtitle: filteredApps.count == 1
-                    ? "1 App gefunden"
-                    : "\(filteredApps.count) Apps gefunden"
-            )
-            .padding(.horizontal, 20)
+    private var appsDiscoveryContent: some View {
+        VStack(alignment: .leading, spacing: 24) {
+            if !model.favoriteApps.isEmpty {
+                favoritesSection
+            }
 
-            if filteredApps.isEmpty {
-                emptySearchPlaceholder
-            } else {
-                VStack(spacing: 0) {
-                    ForEach(filteredApps) { app in
-                        AppRowView(app: app) {
+            if !model.featured.isEmpty {
+                heroSection
+            }
+
+            categorySection
+            allAppsSection
+        }
+    }
+
+    // MARK: - Favorites Section
+
+    private var favoritesSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            SectionHeader(title: "Favourites", count: model.favoriteApps.count)
+                .padding(.horizontal, 20)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 16) {
+                    ForEach(model.favoriteApps) { app in
+                        Button {
                             selectedApp = app
-                        } onInstall: {
-                            model.install(app)
+                        } label: {
+                            VStack(spacing: 8) {
+                                AppIconView(
+                                    tint: app.tint,
+                                    symbol: app.symbol,
+                                    iconURL: app.iconURL,
+                                    size: 72
+                                )
+
+                                Text(app.name)
+                                    .font(.brand(13, .semibold))
+                                    .foregroundColor(.ink)
+                                    .lineLimit(1)
+                                    .frame(width: 76)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .contextMenu {
+                            Button {
+                                model.toggleFavorite(app.id)
+                            } label: {
+                                Label("Remove from Favourites", systemImage: "star.slash")
+                            }
                         }
                     }
                 }
                 .padding(.horizontal, 20)
             }
-        }
-    }
-
-    private var emptySearchPlaceholder: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 36))
-                .foregroundColor(.inkFaint)
-                .padding(.bottom, 4)
-
-            Text("Keine Apps gefunden")
-                .font(.brand(18, .semibold))
-                .foregroundColor(.ink)
-
-            Text("Versuche es mit einem anderen Suchbegriff.")
-                .font(.system(size: 14))
-                .foregroundColor(.inkSoft)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 48)
-    }
-
-    // MARK: - Main Discovery Content
-
-    private var mainDiscoveryContent: some View {
-        VStack(alignment: .leading, spacing: 28) {
-            heroSection
-            categorySection
-            railSection
-            allAppsSection
         }
     }
 
@@ -238,11 +301,11 @@ struct DiscoverView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 CategoryChip(
-                    title: "Alle",
-                    isSelected: selectedCategory == "Alle"
+                    title: "All",
+                    isSelected: selectedCategory == "All"
                 ) {
                     Haptics.selection()
-                    selectedCategory = "Alle"
+                    selectedCategory = "All"
                 }
 
                 ForEach(model.categories, id: \.self) { category in
@@ -259,42 +322,12 @@ struct DiscoverView: View {
         }
     }
 
-    // MARK: - Rail Section
-
-    private var railSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            SectionHeader(
-                title: "Neu & aktualisiert",
-                subtitle: "Kuratierte Highlights der Redaktion"
-            )
-            .padding(.horizontal, 20)
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 14) {
-                    ForEach(railApps) { app in
-                        RailCardView(app: app) {
-                            selectedApp = app
-                        } onInstall: {
-                            model.install(app)
-                        }
-                    }
-                }
-                .padding(.horizontal, 20)
-            }
-        }
-    }
-
     // MARK: - All Apps Section
 
     private var allAppsSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            SectionHeader(
-                title: "Alle Apps",
-                subtitle: filteredApps.count == 1
-                    ? "1 verfügbare Anwendung"
-                    : "\(filteredApps.count) verfügbare Anwendungen"
-            )
-            .padding(.horizontal, 20)
+            SectionHeader(title: "All Apps", count: filteredApps.count)
+                .padding(.horizontal, 20)
 
             VStack(spacing: 0) {
                 ForEach(filteredApps) { app in
@@ -306,6 +339,170 @@ struct DiscoverView: View {
                 }
             }
             .padding(.horizontal, 20)
+        }
+    }
+
+    // MARK: - Search Results Section
+
+    private var searchResultsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            SectionHeader(title: "Results", count: filteredApps.count)
+                .padding(.horizontal, 20)
+
+            if filteredApps.isEmpty {
+                emptySearchPlaceholder
+            } else {
+                VStack(spacing: 0) {
+                    ForEach(filteredApps) { app in
+                        AppRowView(app: app) {
+                            selectedApp = app
+                        } onInstall: {
+                            model.install(app)
+                        }
+                    }
+                }
+                .padding(.horizontal, 20)
+            }
+        }
+    }
+
+    private var emptySearchPlaceholder: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 36))
+                .foregroundColor(.inkFaint)
+                .padding(.bottom, 4)
+
+            Text("No apps found")
+                .font(.brand(18, .semibold))
+                .foregroundColor(.ink)
+
+            Text("Try searching for something else.")
+                .font(.system(size: 14))
+                .foregroundColor(.inkSoft)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 48)
+    }
+
+    // MARK: - Changes Content
+
+    private var changesContent: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            if model.changes.isEmpty {
+                emptyChangesView
+            } else {
+                ForEach(groupedChanges) { group in
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text(group.title)
+                            .font(.brand(17, .semibold))
+                            .foregroundColor(.inkSoft)
+                            .padding(.horizontal, 20)
+
+                        VStack(spacing: 0) {
+                            ForEach(group.items) { item in
+                                ChangeRowView(change: item)
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                    }
+                }
+            }
+        }
+    }
+
+    private var emptyChangesView: some View {
+        VStack(spacing: 12) {
+            Spacer()
+                .frame(height: 32)
+
+            Mark3DTile(size: 96)
+
+            Text("No changes yet")
+                .font(.brand(22, .extrabold))
+                .foregroundColor(.ink)
+
+            Text("New versions from your sources show up here.")
+                .font(.system(size: 14))
+                .foregroundColor(.inkSoft)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 36)
+    }
+
+    private struct ChangeGroup: Identifiable {
+        let id: String
+        let title: String
+        let items: [ChangeItem]
+    }
+
+    private var groupedChanges: [ChangeGroup] {
+        let sorted = model.changes.sorted(by: { $0.date > $1.date })
+        let calendar = Calendar.current
+        let dayFormatter = DateFormatter()
+        dayFormatter.locale = Locale(identifier: "en_GB")
+        dayFormatter.dateFormat = "d MMM"
+
+        var groups: [ChangeGroup] = []
+        var currentTitle = ""
+        var currentItems: [ChangeItem] = []
+
+        for item in sorted {
+            let title: String
+            if calendar.isDateInToday(item.date) {
+                title = "Today"
+            } else if calendar.isDateInYesterday(item.date) {
+                title = "Yesterday"
+            } else {
+                title = dayFormatter.string(from: item.date)
+            }
+
+            if title == currentTitle {
+                currentItems.append(item)
+            } else {
+                if !currentItems.isEmpty {
+                    groups.append(ChangeGroup(id: currentTitle, title: currentTitle, items: currentItems))
+                }
+                currentTitle = title
+                currentItems = [item]
+            }
+        }
+
+        if !currentItems.isEmpty {
+            groups.append(ChangeGroup(id: currentTitle, title: currentTitle, items: currentItems))
+        }
+
+        return groups
+    }
+
+    // MARK: - File Importer Handler
+
+    private func handleFileImporter(result: Result<[URL], Error>) {
+        switch result {
+        case .success(let urls):
+            guard let url = urls.first else { return }
+            guard url.startAccessingSecurityScopedResource() else { return }
+            defer { url.stopAccessingSecurityScopedResource() }
+
+            let tempDir = FileManager.default.temporaryDirectory
+            let uniqueName = UUID().uuidString + "-" + url.lastPathComponent
+            let destURL = tempDir.appendingPathComponent(uniqueName)
+
+            do {
+                if FileManager.default.fileExists(atPath: destURL.path) {
+                    try FileManager.default.removeItem(at: destURL)
+                }
+                try FileManager.default.copyItem(at: url, to: destURL)
+                pendingIPAURL = destURL
+                pendingIPAName = url.lastPathComponent
+                isConfirmInstallPresented = true
+            } catch {
+                model.lastError = error.localizedDescription
+            }
+        case .failure(let error):
+            model.lastError = error.localizedDescription
         }
     }
 }
@@ -324,97 +521,63 @@ private struct HeroCardView: View {
 
     var body: some View {
         Button(action: onSelect) {
-            cardContent
+            VStack(spacing: 0) {
+                topZone
+                bottomZone
+            }
+            .frame(width: cardWidth, height: 390)
+            .clipShape(RoundedRectangle(cornerRadius: SpananiRadius.card, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: SpananiRadius.card, style: .continuous)
+                    .stroke(Color.paperSunk, lineWidth: 1)
+            )
         }
         .buttonStyle(.plain)
-        .scrollTransition(axis: .horizontal) { content, phase in
-            content
-                .scaleEffect(phase.isIdentity ? 1.0 : 0.92)
-                .opacity(phase.isIdentity ? 1.0 : 0.70)
-        }
-    }
-
-    private var cardContent: some View {
-        ZStack(alignment: .bottomLeading) {
-            cardBackground
-            watermarkLogo
-
-            VStack(alignment: .leading, spacing: 0) {
-                taglinePill
-                Spacer()
-                floatingIcon
-                Spacer()
-                detailsSection
-            }
-            .padding(22)
-        }
-        .frame(width: cardWidth, height: 400)
-        .clipShape(RoundedRectangle(cornerRadius: SpananiRadius.card, style: .continuous))
-        .overlay(cardBorder)
-        .softShadow(color: Color.black.opacity(0.24), radius: 18, x: 0, y: 8)
-    }
-
-    private var cardBackground: some View {
-        LinearGradient(
-            colors: [
-                app.tint.opacity(0.75),
-                Color.paperRaised
-            ],
-            startPoint: .top,
-            endPoint: .bottom
-        )
-    }
-
-    private var watermarkLogo: some View {
-        VStack {
-            Spacer()
-            HStack {
-                Spacer()
-                SpananiLogo.markImage()
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 210, height: 210)
-                    .foregroundColor(.white)
-                    .opacity(0.08)
-                    .rotationEffect(.degrees(-12))
-                    .offset(x: 40, y: 50)
+        .contextMenu {
+            Button {
+                model.toggleFavorite(app.id)
+            } label: {
+                if model.isFavorite(app.id) {
+                    Label("Remove from Favourites", systemImage: "star.slash")
+                } else {
+                    Label("Add to Favourites", systemImage: "star")
+                }
             }
         }
     }
 
-    private var cardBorder: some View {
-        RoundedRectangle(cornerRadius: SpananiRadius.card, style: .continuous)
-            .stroke(Color.white.opacity(0.12), lineWidth: 1)
-    }
+    private var topZone: some View {
+        ZStack(alignment: .topLeading) {
+            app.tint
 
-    private var taglinePill: some View {
-        Text(app.heroTagline.uppercased())
-            .font(.brand(12, .semibold))
-            .foregroundColor(.white)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(Color.black.opacity(0.28))
-            .clipShape(Capsule())
-    }
+            if !app.heroTagline.isEmpty {
+                Text(app.heroTagline.uppercased())
+                    .font(.brand(12, .semibold))
+                    .foregroundColor(.ink)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(Color.paperSunk)
+                    .clipShape(Capsule())
+                    .padding(16)
+            }
 
-    private var floatingIcon: some View {
-        HStack {
-            Spacer()
-            AppIconView(
-                tint: app.tint,
-                symbol: app.symbol,
-                iconURL: app.iconURL,
-                size: 132
-            )
-            Spacer()
+            Center {
+                AppIconView(
+                    tint: app.tint,
+                    symbol: app.symbol,
+                    iconURL: app.iconURL,
+                    size: 120
+                )
+            }
         }
+        .frame(height: 220)
     }
 
-    private var detailsSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+    private var bottomZone: some View {
+        VStack(alignment: .leading, spacing: 6) {
             Text(app.name)
-                .font(.brand(30, .extrabold))
-                .foregroundColor(.white)
+                .font(.brand(28, .extrabold))
+                .foregroundColor(.ink)
                 .lineLimit(1)
 
             Text(app.subtitle)
@@ -422,6 +585,8 @@ private struct HeroCardView: View {
                 .foregroundColor(.inkSoft)
                 .lineLimit(2)
                 .multilineTextAlignment(.leading)
+
+            Spacer()
 
             HStack(alignment: .center, spacing: 12) {
                 InstallButton(
@@ -437,77 +602,29 @@ private struct HeroCardView: View {
 
                 Spacer()
             }
-            .padding(.top, 4)
         }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.paperRaised)
     }
 }
 
-// MARK: - Rail Card View
+// MARK: - Center Helper
 
-private struct RailCardView: View {
-    @EnvironmentObject private var model: StoreModel
-    let app: StoreItem
-    var onSelect: () -> Void
-    var onInstall: () -> Void
+private struct Center<Content: View>: View {
+    let content: () -> Content
+
+    init(@ViewBuilder content: @escaping () -> Content) {
+        self.content = content
+    }
 
     var body: some View {
-        Button(action: onSelect) {
-            VStack(alignment: .leading, spacing: 10) {
-                topGradientArea
-                infoArea
-            }
-            .frame(width: 160, height: 210)
-            .background(Color.paperRaised)
-            .clipShape(RoundedRectangle(cornerRadius: SpananiRadius.tile, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: SpananiRadius.tile, style: .continuous)
-                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
-            )
-            .softShadow(color: Color.black.opacity(0.12), radius: 10, x: 0, y: 4)
-        }
-        .buttonStyle(.plain)
-    }
-
-    private var topGradientArea: some View {
-        ZStack {
-            LinearGradient(
-                colors: [app.tint.opacity(0.65), app.tint.opacity(0.20)],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            AppIconView(
-                tint: app.tint,
-                symbol: app.symbol,
-                iconURL: app.iconURL,
-                size: 72
-            )
-        }
-        .frame(width: 160, height: 100)
-    }
-
-    private var infoArea: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(app.name)
-                .font(.brand(15, .semibold))
-                .foregroundColor(.ink)
-                .lineLimit(1)
-
-            Text(app.subtitle)
-                .font(.system(size: 12))
-                .foregroundColor(.inkSoft)
-                .lineLimit(1)
-
+        HStack {
             Spacer()
-
-            InstallButton(
-                state: model.state(for: app),
-                minHeight: 28,
-                fontSize: 13,
-                action: onInstall
-            )
+            content()
+            Spacer()
         }
-        .padding(.horizontal, 10)
-        .padding(.bottom, 10)
+        .frame(maxHeight: .infinity)
     }
 }
 
@@ -527,7 +644,7 @@ private struct AppRowView: View {
                         tint: app.tint,
                         symbol: app.symbol,
                         iconURL: app.iconURL,
-                        size: 62
+                        size: 56
                     )
 
                     VStack(alignment: .leading, spacing: 3) {
@@ -541,13 +658,9 @@ private struct AppRowView: View {
                             .foregroundColor(.inkSoft)
                             .lineLimit(1)
 
-                        HStack(spacing: 6) {
-                            Text(app.category)
-                            Text("•")
-                            Text(Formatters.fileSize(app.sizeBytes))
-                        }
-                        .font(.system(size: 12, weight: .regular))
-                        .foregroundColor(.inkFaint)
+                        Text("\(app.category) · \(Formatters.fileSize(app.sizeBytes))")
+                            .font(.system(size: 12, weight: .regular))
+                            .foregroundColor(.inkFaint)
                     }
 
                     Spacer()
@@ -562,11 +675,90 @@ private struct AppRowView: View {
                 .padding(.vertical, 12)
             }
             .buttonStyle(.plain)
+            .contextMenu {
+                Button {
+                    model.toggleFavorite(app.id)
+                } label: {
+                    if model.isFavorite(app.id) {
+                        Label("Remove from Favourites", systemImage: "star.slash")
+                    } else {
+                        Label("Add to Favourites", systemImage: "star")
+                    }
+                }
+            }
 
             Rectangle()
                 .fill(Color.paperSunk)
                 .frame(height: 1)
-                .padding(.leading, 76)
+                .padding(.leading, 70)
+        }
+    }
+}
+
+// MARK: - Change Row View
+
+private struct ChangeRowView: View {
+    @EnvironmentObject private var model: StoreModel
+    let change: ChangeItem
+
+    private var matchingApp: StoreItem? {
+        model.apps.first { $0.id == change.appID }
+    }
+
+    private var relativeTime: String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .abbreviated
+        return formatter.localizedString(for: change.date, relativeTo: Date())
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(alignment: .top, spacing: 12) {
+                AppIconView(
+                    tint: change.tint,
+                    symbol: change.symbol,
+                    iconURL: change.iconURL,
+                    size: 44
+                )
+
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text("\(change.appName)  \(change.version)")
+                            .font(.brand(16, .semibold))
+                            .foregroundColor(.ink)
+                            .lineLimit(1)
+
+                        Spacer()
+
+                        Text(relativeTime)
+                            .font(.system(size: 12))
+                            .foregroundColor(.inkFaint)
+                    }
+
+                    Text(change.notes)
+                        .font(.system(size: 14))
+                        .foregroundColor(.inkSoft)
+                        .lineLimit(3)
+                        .multilineTextAlignment(.leading)
+                }
+
+                if let app = matchingApp {
+                    InstallButton(
+                        state: model.state(for: app),
+                        minHeight: 30,
+                        fontSize: 13
+                    ) {
+                        model.install(app)
+                    }
+                    .padding(.leading, 4)
+                }
+            }
+            .padding(.vertical, 12)
+
+            Rectangle()
+                .fill(Color.paperSunk)
+                .frame(height: 1)
+                .padding(.leading, 56)
         }
     }
 }

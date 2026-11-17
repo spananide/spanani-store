@@ -120,6 +120,48 @@ public enum InstallState: Equatable {
     case failed(String)
 }
 
+public struct ChangeItem: Identifiable, Hashable {
+    public let id: String            // "<bundleID>@<version>"
+    public var appID: String
+    public var appName: String
+    public var tint: Color
+    public var symbol: String
+    public var iconURL: URL?
+    public var version: String
+    public var date: Date
+    public var notes: String
+
+    public init(
+        id: String,
+        appID: String,
+        appName: String,
+        tint: Color,
+        symbol: String = "app.fill",
+        iconURL: URL? = nil,
+        version: String,
+        date: Date,
+        notes: String
+    ) {
+        self.id = id
+        self.appID = appID
+        self.appName = appName
+        self.tint = tint
+        self.symbol = symbol
+        self.iconURL = iconURL
+        self.version = version
+        self.date = date
+        self.notes = notes
+    }
+
+    public static func == (lhs: ChangeItem, rhs: ChangeItem) -> Bool {
+        lhs.id == rhs.id
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+}
+
 public struct SourceItem: Identifiable, Hashable {
     public let id: String
     public var name: String
