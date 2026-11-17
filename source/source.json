@@ -13,17 +13,17 @@
       "iconURL": "https://raw.githubusercontent.com/spananide/spanani-store/develop/source/icons/store.png",
       "tintColor": "9955E7",
       "category": "utilities",
-      "version": "0.5.0",
+      "version": "0.6.0",
       "date": "2026-11-17T00:00:00Z",
       "downloadURL": "https://github.com/spananide/spanani-store/releases/latest/download/SpananiStore.ipa",
-      "size": 30246730,
+      "size": 30633566,
       "versions": [
         {
-          "version": "0.5.0",
+          "version": "0.6.0",
           "date": "2026-11-17T00:00:00Z",
           "localizedDescription": "Neue Oberfläche, eigene Quelle.",
           "downloadURL": "https://github.com/spananide/spanani-store/releases/latest/download/SpananiStore.ipa",
-          "size": 30246730
+          "size": 30633566
         }
       ],
       "appPermissions": {
