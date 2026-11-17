@@ -12,6 +12,7 @@ import SideSign
 import SpananiUI
 import SwiftUI
 import UIKit
+import UserNotifications
 
 private final class ProgressBox: @unchecked Sendable {
     var observation: NSKeyValueObservation?
@@ -26,6 +27,7 @@ final class SpananiBridge: StoreActions {
     private var didStart = false
     private var debounceTask: Task<Void, Never>?
     private var notificationObservers: [NSObjectProtocol] = []
+    private var lastReminderSignature: String?
 
     private init() {
         model.actions = self
@@ -175,20 +177,46 @@ final class SpananiBridge: StoreActions {
             )
         }
 
+        let changes: [ChangeItem] = filteredApps.flatMap { app in
+            app.versions.prefix(3).map { version in
+                ChangeItem(
+                    id: "\(app.bundleIdentifier)@\(version.version)",
+                    appID: app.bundleIdentifier,
+                    appName: app.name,
+                    tint: Color(uiColor: app.tintColor ?? defaultTint),
+                    symbol: "app.fill",
+                    iconURL: app.iconURL,
+                    version: version.version,
+                    date: version.date,
+                    notes: version.localizedDescription ?? ""
+                )
+            }
+        }
+        let sortedChanges = changes.sorted { $0.date > $1.date }
+
         model.apps = mappedApps
         model.installed = mappedInstalled
         model.sources = mappedSources
+        model.changes = Array(sortedChanges.prefix(40))
         model.activeLimit = InstalledApp.freeAccountActiveAppsLimit
+        model.autoRefreshEnabled = UserDefaults.standard.isBackgroundRefreshEnabled
+        model.remindersEnabled = UserDefaults.standard.bool(forKey: "spanani.reminders")
 
         let appleID = Keychain.shared.appleIDEmailAddress
         let isPaired = PairingFileManager.shared.hasPairingFile()
         let vpnOn = minimuxer.network.isUTunAvailable
+        let widgetsReady = Bundle.main.altstoreAppGroup != nil
 
         model.account = AccountInfo(
             appleID: appleID,
             isPaired: isPaired,
-            vpnOn: vpnOn
+            vpnOn: vpnOn,
+            widgetsReady: widgetsReady
         )
+
+        Task {
+            await self.rescheduleReminders()
+        }
     }
 
     private func mapCategory(_ app: StoreApp) -> String {
@@ -554,5 +582,142 @@ final class SpananiBridge: StoreActions {
         await AuthManager.shared.signOut()
         model.account.appleID = nil
         debugLog("[SpananiBridge] signOut() completed")
+    }
+
+    // MARK: - Auto-Refresh & Reminders
+
+    func setAutoRefresh(_ enabled: Bool) async {
+        UserDefaults.standard.isBackgroundRefreshEnabled = enabled
+        debugLog("[SpananiBridge] setAutoRefresh(\(enabled))")
+    }
+
+    func setReminders(_ enabled: Bool) async -> Bool {
+        // needs proper testing on device
+        debugLog("[SpananiBridge] setReminders(\(enabled)) requested")
+        if enabled {
+            let granted = (try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])) ?? false
+            if granted {
+                UserDefaults.standard.set(true, forKey: "spanani.reminders")
+                await self.rescheduleReminders(force: true)
+                return true
+            } else {
+                UserDefaults.standard.set(false, forKey: "spanani.reminders")
+                await self.removePendingExpiryReminders()
+                return false
+            }
+        } else {
+            UserDefaults.standard.set(false, forKey: "spanani.reminders")
+            await self.removePendingExpiryReminders()
+            return false
+        }
+    }
+
+    private func removePendingExpiryReminders() async {
+        let center = UNUserNotificationCenter.current()
+        let pending = await center.pendingNotificationRequests()
+        let expiryIdentifiers = pending.map(\.identifier).filter { $0.hasPrefix("spanani.expiry.") }
+        if !expiryIdentifiers.isEmpty {
+            center.removePendingNotificationRequests(withIdentifiers: expiryIdentifiers)
+        }
+        self.lastReminderSignature = nil
+    }
+
+    private func rescheduleReminders(force: Bool = false) async {
+        // needs proper testing on device
+        guard UserDefaults.standard.bool(forKey: "spanani.reminders") else { return }
+        let center = UNUserNotificationCenter.current()
+        let settings = await center.notificationSettings()
+        let status = settings.authorizationStatus
+        guard status == .authorized || status == .provisional || status == .ephemeral else { return }
+
+        let context = DatabaseManager.shared.viewContext
+        let installedApps = InstalledApp.all(in: context)
+            .filter { $0.isActive && $0.bundleIdentifier != StoreApp.altstoreAppID }
+
+        let signature = installedApps
+            .map { "\($0.bundleIdentifier)\($0.expirationDate.timeIntervalSince1970)" }
+            .sorted()
+            .joined(separator: "|")
+
+        if !force && signature == self.lastReminderSignature {
+            return
+        }
+
+        let pending = await center.pendingNotificationRequests()
+        let expiryIdentifiers = pending.map(\.identifier).filter { $0.hasPrefix("spanani.expiry.") }
+        if !expiryIdentifiers.isEmpty {
+            center.removePendingNotificationRequests(withIdentifiers: expiryIdentifiers)
+        }
+
+        let now = Date()
+        for app in installedApps {
+            guard app.expirationDate > now else { continue }
+            let fireDate = app.expirationDate.addingTimeInterval(-24 * 60 * 60)
+
+            let content = UNMutableNotificationContent()
+            content.body = "Open spanani Store and tap Refresh All to keep it running."
+            content.sound = .default
+
+            let trigger: UNNotificationTrigger
+            if fireDate > now {
+                content.title = "\(app.name) expires tomorrow"
+                let components = Calendar.current.dateComponents(
+                    [.year, .month, .day, .hour, .minute, .second],
+                    from: fireDate
+                )
+                trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+            } else {
+                content.title = "\(app.name) expires soon"
+                trigger = UNTimeIntervalNotificationTrigger(timeInterval: 60, repeats: false)
+            }
+
+            let identifier = "spanani.expiry.\(app.bundleIdentifier)"
+            let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
+            try? await center.add(request)
+        }
+
+        self.lastReminderSignature = signature
+    }
+
+    // MARK: - Install IPA
+
+    func installIPA(_ url: URL, progress: @escaping (Double) -> Void) async throws {
+        // needs proper testing on device
+        debugLog("[SpananiBridge] installIPA() requested for: \(url.path)")
+        defer {
+            try? FileManager.default.removeItem(at: url)
+        }
+
+        let box = ProgressBox()
+
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            let group = AppManager.shared.install(
+                .url(url),
+                presentingViewController: Self.topViewController
+            ) { result in
+                box.observation?.invalidate()
+                box.observation = nil
+
+                switch result {
+                case .success:
+                    debugLog("[SpananiBridge] installIPA succeeded for: \(url.lastPathComponent)")
+                    continuation.resume()
+                case .failure(let error):
+                    debugLog("[SpananiBridge] installIPA failed for: \(url.lastPathComponent), error: \(error)")
+                    if error is CancellationError {
+                        continuation.resume(throwing: OperationError.cancelled)
+                    } else {
+                        continuation.resume(throwing: error)
+                    }
+                }
+            }
+
+            box.observation = group.progress.observe(\.fractionCompleted, options: [.initial, .new]) { p, _ in
+                let frac = p.fractionCompleted
+                Task { @MainActor in
+                    progress(frac)
+                }
+            }
+        }
     }
 }

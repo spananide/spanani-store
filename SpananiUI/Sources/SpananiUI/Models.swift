@@ -196,14 +196,17 @@ public struct AccountInfo: Equatable {
     public var appleID: String?
     public var isPaired: Bool
     public var vpnOn: Bool
+    public var widgetsReady: Bool
 
     public init(
         appleID: String? = nil,
         isPaired: Bool = false,
-        vpnOn: Bool = false
+        vpnOn: Bool = false,
+        widgetsReady: Bool = true
     ) {
         self.appleID = appleID
         self.isPaired = isPaired
         self.vpnOn = vpnOn
+        self.widgetsReady = widgetsReady
     }
 }

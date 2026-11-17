@@ -482,6 +482,24 @@ struct SettingsView: View {
                         .foregroundColor(model.account.vpnOn ? .success : .warning)
                 }
                 .padding(16)
+
+                Rectangle()
+                    .fill(Color.paperSunk)
+                    .frame(height: 1)
+                    .padding(.horizontal, 16)
+
+                HStack {
+                    Text("Widgets")
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundColor(.ink)
+
+                    Spacer()
+
+                    Text(model.account.widgetsReady ? "Ready" : "Needs app group")
+                        .font(.brand(14, .semibold))
+                        .foregroundColor(model.account.widgetsReady ? .success : .warning)
+                }
+                .padding(16)
             }
             .background(Color.paperRaised)
             .clipShape(RoundedRectangle(cornerRadius: SpananiRadius.tile, style: .continuous))
