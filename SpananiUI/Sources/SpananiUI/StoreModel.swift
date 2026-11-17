@@ -229,6 +229,7 @@ public final class StoreModel: ObservableObject {
                     Haptics.notify(.success)
                 } catch {
                     self.installStates[app.id] = .failed(error.localizedDescription)
+                    self.lastError = error.localizedDescription
                     Haptics.notify(.error)
                 }
             } else {

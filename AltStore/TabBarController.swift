@@ -70,6 +70,18 @@ final class TabBarController: UITabBarController
     override func viewDidLayoutSubviews()
     {
         super.viewDidLayoutSubviews()
+        self.topUpSpananiInsets()
+    }
+
+    // view.window is nil during the first layout passes and nothing triggers another one afterwards, so also run when the window arrives.
+    override func viewSafeAreaInsetsDidChange()
+    {
+        super.viewSafeAreaInsetsDidChange()
+        self.topUpSpananiInsets()
+    }
+
+    private func topUpSpananiInsets()
+    {
         guard let host = self.spananiHost, let window = self.view.window else { return }
         let current = host.additionalSafeAreaInsets
         let derived = UIEdgeInsets(top: host.view.safeAreaInsets.top - current.top, left: 0, bottom: host.view.safeAreaInsets.bottom - current.bottom, right: 0)
@@ -81,6 +93,9 @@ final class TabBarController: UITabBarController
     override func viewDidAppear(_ animated: Bool)
     {
         super.viewDidAppear(animated)
+        #if !os(tvOS)
+        self.topUpSpananiInsets()
+        #endif
         debugLog("[TabBarController] viewDidAppear() — TabBarController is now visible")
         
         _viewDidAppear = true
