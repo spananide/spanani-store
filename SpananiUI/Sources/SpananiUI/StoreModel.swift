@@ -30,6 +30,7 @@ public final class StoreModel: ObservableObject {
     @Published public var installStates: [String: InstallState]
     @Published public var refreshProgress: Double?
     @Published public var activeLimit: Int
+    @Published public var lastError: String?
 
     public var actions: StoreActions?
 
@@ -48,6 +49,7 @@ public final class StoreModel: ObservableObject {
         self.installStates = [:]
         self.refreshProgress = nil
         self.activeLimit = activeLimit
+        self.lastError = nil
         self.actions = actions
     }
 
@@ -169,6 +171,7 @@ public final class StoreModel: ObservableObject {
                     }
                     Haptics.notify(.success)
                 } catch {
+                    self.lastError = error.localizedDescription
                     Haptics.notify(.error)
                 }
             } else {
@@ -200,6 +203,7 @@ public final class StoreModel: ObservableObject {
                     self.refreshProgress = nil
                     Haptics.notify(.success)
                 } catch {
+                    self.lastError = error.localizedDescription
                     self.refreshProgress = nil
                     Haptics.notify(.error)
                 }
@@ -234,6 +238,7 @@ public final class StoreModel: ObservableObject {
                     }
                     Haptics.notify(.success)
                 } catch {
+                    self.lastError = error.localizedDescription
                     Haptics.notify(.error)
                 }
             } else {
@@ -250,6 +255,7 @@ public final class StoreModel: ObservableObject {
             do {
                 try await addSourceAsync(urlString)
             } catch {
+                self.lastError = error.localizedDescription
                 Haptics.notify(.error)
             }
         }
@@ -270,7 +276,7 @@ public final class StoreModel: ObservableObject {
                 throw NSError(
                     domain: "SpananiUI",
                     code: 400,
-                    userInfo: [NSLocalizedDescriptionKey: "Ungültige URL. Bitte gib eine vollständige Adresse ein."]
+                    userInfo: [NSLocalizedDescriptionKey: "Invalid URL. Enter a complete address."]
                 )
             }
             try? await Task.sleep(nanoseconds: 300_000_000)
@@ -278,7 +284,7 @@ public final class StoreModel: ObservableObject {
                 name: host.capitalized,
                 url: trimmed,
                 appCount: 0,
-                tint: .brand
+                tint: .accentColor
             )
             self.sources.append(newSource)
             Haptics.notify(.success)
@@ -294,6 +300,7 @@ public final class StoreModel: ObservableObject {
                     self.sources.removeAll { $0.id == source.id }
                     Haptics.notify(.success)
                 } catch {
+                    self.lastError = error.localizedDescription
                     Haptics.notify(.error)
                 }
             } else {

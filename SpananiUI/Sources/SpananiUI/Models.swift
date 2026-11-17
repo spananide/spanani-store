@@ -132,7 +132,7 @@ public struct SourceItem: Identifiable, Hashable {
         name: String,
         url: String,
         appCount: Int,
-        tint: Color = .brand
+        tint: Color = .accentColor
     ) {
         self.id = id
         self.name = name
