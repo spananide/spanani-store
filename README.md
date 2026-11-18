@@ -55,6 +55,10 @@
   <img src="docs/screenshots/installer.png" width="640" alt="spanani Installer">
 </p>
 
+## Community apps
+
+Missing an app? Open **Discover**, scroll to the bottom and tap **Suggest an app**, then pick an `.ipa` from Files. Every file is checked by hand before it goes live. Accepted apps show up in Discover as Community apps. They are not made by spanani.de. Only send apps you are allowed to share; cracked or paid apps are declined.
+
 ## FAQ
 
 <details>
