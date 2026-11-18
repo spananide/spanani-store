@@ -6,6 +6,7 @@
   <br><br>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-AGPL--3.0-9955E7?style=flat-square" alt="License: AGPL-3.0"></a>
   <a href="https://github.com/spananide/spanani-store/releases"><img src="https://img.shields.io/github/v/release/spananide/spanani-store?style=flat-square&color=9955E7" alt="Latest Release"></a>
+  <a href="https://github.com/spananide/spanani-store/releases"><img src="https://img.shields.io/github/downloads/spananide/spanani-store/total?style=flat-square&color=9955E7&label=Downloads" alt="Total downloads"></a>
   <img src="https://img.shields.io/badge/Platform-iOS%2017%2B-9955E7?style=flat-square" alt="Platform: iOS 17+">
 </p>
 
