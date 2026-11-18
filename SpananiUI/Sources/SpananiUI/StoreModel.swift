@@ -8,6 +8,7 @@ public protocol StoreActions: AnyObject {
     func refreshAll(progress: @escaping (Double) -> Void) async throws
     func open(_ app: InstalledItem)
     func deactivate(_ app: InstalledItem) async throws
+    func deleteApp(_ app: InstalledItem) async throws
     func addSource(urlString: String) async throws
     func removeSource(_ source: SourceItem) async throws
     func refreshSources() async
@@ -18,6 +19,7 @@ public protocol StoreActions: AnyObject {
 }
 
 public extension StoreActions {
+    func deleteApp(_ app: InstalledItem) async throws {}
     func addSource(urlString: String) async throws {}
     func removeSource(_ source: SourceItem) async throws {}
     func refreshSources() async {}
@@ -349,6 +351,25 @@ public final class StoreModel: ObservableObject {
                 if let idx = self.installed.firstIndex(where: { $0.id == item.id }) {
                     self.installed[idx].isActive.toggle()
                 }
+                Haptics.notify(.success)
+            }
+        }
+    }
+
+    public func delete(_ item: InstalledItem) {
+        Haptics.impact(.medium)
+        Task {
+            if let actions = self.actions {
+                do {
+                    try await actions.deleteApp(item)
+                    self.installed.removeAll { $0.id == item.id }
+                    Haptics.notify(.success)
+                } catch {
+                    self.lastError = error.localizedDescription
+                    Haptics.notify(.error)
+                }
+            } else {
+                self.installed.removeAll { $0.id == item.id }
                 Haptics.notify(.success)
             }
         }

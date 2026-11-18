@@ -461,6 +461,7 @@ final class SpananiBridge: StoreActions {
     }
 
     func deactivate(_ app: InstalledItem) async throws {
+        if let startError = await AppBootManager.shared.ensureMinimuxerStarted() { throw startError }
         // needs proper testing on device
         debugLog("[SpananiBridge] deactivate/activate toggle requested for: \(app.id)")
         let context = DatabaseManager.shared.viewContext
@@ -506,6 +507,42 @@ final class SpananiBridge: StoreActions {
                         debugLog("[SpananiBridge] Activate failed for: \(app.id), error: \(error)")
                         continuation.resume(throwing: error)
                     }
+                }
+            }
+        }
+    }
+
+    func deleteApp(_ app: InstalledItem) async throws {
+        if let startError = await AppBootManager.shared.ensureMinimuxerStarted() { throw startError }
+        // needs proper testing on device
+        debugLog("[SpananiBridge] deleteApp() requested for: \(app.id)")
+        let context = DatabaseManager.shared.viewContext
+
+        guard let installedApp = InstalledApp.first(
+            satisfying: NSPredicate(format: "%K == %@", #keyPath(InstalledApp.bundleIdentifier), app.id),
+            in: context
+        ) else {
+            let error = NSError(
+                domain: "SpananiBridge",
+                code: 404,
+                userInfo: [NSLocalizedDescriptionKey: "Installed app was not found."]
+            )
+            debugLog("[SpananiBridge] App not found for deletion: \(app.id)")
+            throw error
+        }
+
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            AppManager.shared.deleteApp(
+                installedApp,
+                presentingViewController: Self.topViewController
+            ) { result in
+                switch result {
+                case .success:
+                    debugLog("[SpananiBridge] Delete succeeded for: \(app.id)")
+                    continuation.resume()
+                case .failure(let error):
+                    debugLog("[SpananiBridge] Delete failed for: \(app.id), error: \(error)")
+                    continuation.resume(throwing: error)
                 }
             }
         }

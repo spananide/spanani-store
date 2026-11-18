@@ -351,6 +351,10 @@ private struct UpdateAppRowView: View {
 private struct InstalledAppRowView: View {
     @EnvironmentObject private var model: StoreModel
     let item: InstalledItem
+    @State private var confirmDelete = false
+
+    // The store cannot delete itself.
+    private var canDelete: Bool { !item.id.hasPrefix("de.spanani.store") }
 
     private var daysLeft: Double {
         max(0, item.expiresAt.timeIntervalSinceNow / 86400.0)
@@ -437,6 +441,14 @@ private struct InstalledAppRowView: View {
                             systemImage: item.isActive ? "pause.circle" : "play.circle"
                         )
                     }
+
+                    if canDelete {
+                        Button(role: .destructive) {
+                            confirmDelete = true
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    }
                 } label: {
                     Image(systemName: "ellipsis")
                         .font(.system(size: 16, weight: .bold))
@@ -468,12 +480,32 @@ private struct InstalledAppRowView: View {
                         systemImage: item.isActive ? "pause.circle" : "play.circle"
                     )
                 }
+
+                if canDelete {
+                    Button(role: .destructive) {
+                        confirmDelete = true
+                    } label: {
+                        Label("Delete", systemImage: "trash")
+                    }
+                }
             }
 
             Rectangle()
                 .fill(Color.paperSunk)
                 .frame(height: 1)
                 .padding(.leading, 70)
+        }
+        .confirmationDialog(
+            "Delete \(item.name)?",
+            isPresented: $confirmDelete,
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) {
+                model.delete(item)
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("The app and its data are removed from this iPhone.")
         }
     }
 }

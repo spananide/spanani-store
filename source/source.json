@@ -13,15 +13,15 @@
       "iconURL": "https://raw.githubusercontent.com/spananide/spanani-store/develop/source/icons/store.png",
       "tintColor": "9955E7",
       "category": "utilities",
-      "version": "0.6.4",
-      "date": "2026-11-18T00:15:00Z",
+      "version": "0.7.1",
+      "date": "2026-11-18T12:00:00Z",
       "downloadURL": "https://github.com/spananide/spanani-store/releases/latest/download/SpananiStore.ipa",
       "size": 30635565,
       "versions": [
         {
-          "version": "0.6.4",
-          "date": "2026-11-18T00:15:00Z",
-          "localizedDescription": "Fixes the header at the top and the pairing file.",
+          "version": "0.7.1",
+          "date": "2026-11-18T12:00:00Z",
+          "localizedDescription": "Delete button, pull to refresh on My Apps, deactivate fix.",
           "downloadURL": "https://github.com/spananide/spanani-store/releases/latest/download/SpananiStore.ipa",
           "size": 30635565
         },
