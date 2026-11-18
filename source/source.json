@@ -13,11 +13,18 @@
       "iconURL": "https://raw.githubusercontent.com/spananide/spanani-store/develop/source/icons/store.png",
       "tintColor": "9955E7",
       "category": "utilities",
-      "version": "0.8.0",
-      "date": "2026-11-18T16:14:00Z",
+      "version": "0.8.1",
+      "date": "2026-11-18T17:50:00Z",
       "downloadURL": "https://github.com/spananide/spanani-store/releases/latest/download/SpananiStore.ipa",
-      "size": 30697541,
+      "size": 30698185,
       "versions": [
+        {
+          "version": "0.8.1",
+          "date": "2026-11-18T17:50:00Z",
+          "localizedDescription": "Fixes the Update button for the store itself.",
+          "downloadURL": "https://github.com/spananide/spanani-store/releases/latest/download/SpananiStore.ipa",
+          "size": 30698185
+        },
         {
           "version": "0.8.0",
           "date": "2026-11-18T16:14:00Z",
