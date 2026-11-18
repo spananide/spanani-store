@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 public struct SpananiRoot: View {
     @ObservedObject public var model: StoreModel
@@ -23,7 +24,10 @@ public struct SpananiRoot: View {
             Color.paper
                 .ignoresSafeArea()
 
-            tabContent
+            GeometryReader { geo in
+                tabContent
+                    .padding(.top, missingTopInset(geo.safeAreaInsets.top))
+            }
 
             VStack {
                 Spacer()
@@ -58,6 +62,13 @@ public struct SpananiRoot: View {
                 Text(error)
             }
         }
+    }
+
+    // On the device the overlay can arrive without the top safe area (content under the Dynamic Island): add only what is missing.
+    private func missingTopInset(_ safeTop: CGFloat) -> CGFloat {
+        let scene = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first
+        let statusBar = scene?.statusBarManager?.statusBarFrame.height ?? 0
+        return max(0, statusBar - safeTop)
     }
 
     @ViewBuilder
