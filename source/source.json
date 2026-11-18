@@ -8,20 +8,27 @@
       "name": "spanani Store",
       "bundleIdentifier": "de.spanani.store",
       "developerName": "spanani.de",
-      "subtitle": "Dein eigener App-Store",
-      "localizedDescription": "Der spanani Store installiert und aktualisiert Apps direkt auf deinem iPhone, ohne Computer.",
+      "subtitle": "Your own app store",
+      "localizedDescription": "Installs and refreshes apps right on your iPhone, no computer needed.",
       "iconURL": "https://raw.githubusercontent.com/spananide/spanani-store/develop/source/icons/store.png",
       "tintColor": "9955E7",
       "category": "utilities",
-      "version": "0.6.0",
-      "date": "2026-11-17T00:00:00Z",
+      "version": "0.6.4",
+      "date": "2026-11-18T00:15:00Z",
       "downloadURL": "https://github.com/spananide/spanani-store/releases/latest/download/SpananiStore.ipa",
-      "size": 30633566,
+      "size": 30635565,
       "versions": [
+        {
+          "version": "0.6.4",
+          "date": "2026-11-18T00:15:00Z",
+          "localizedDescription": "Fixes the header at the top and the pairing file.",
+          "downloadURL": "https://github.com/spananide/spanani-store/releases/latest/download/SpananiStore.ipa",
+          "size": 30635565
+        },
         {
           "version": "0.6.0",
           "date": "2026-11-17T00:00:00Z",
-          "localizedDescription": "Neue Oberfläche, eigene Quelle.",
+          "localizedDescription": "New interface, own source.",
           "downloadURL": "https://github.com/spananide/spanani-store/releases/latest/download/SpananiStore.ipa",
           "size": 30633566
         }
