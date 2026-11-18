@@ -54,11 +54,18 @@
       "iconURL": "https://raw.githubusercontent.com/spananide/spanani-store/develop/source/icons/fmhy.png",
       "tintColor": "9955E7",
       "category": "utilities",
-      "version": "1.6.0",
-      "date": "2026-11-18T00:10:00Z",
-      "downloadURL": "https://github.com/spananide/fmhy-ios/releases/download/v1.6.0/FMHY-iOS-v1.6.0.ipa",
-      "size": 4023587,
+      "version": "1.7.0",
+      "date": "2026-11-18T17:30:00Z",
+      "downloadURL": "https://github.com/spananide/fmhy-ios/releases/download/v1.7.0/FMHY-iOS-v1.7.0.ipa",
+      "size": 4082950,
       "versions": [
+        {
+          "version": "1.7.0",
+          "date": "2026-11-18T17:30:00Z",
+          "localizedDescription": "Easier wiki browsing: group overview and jump bar.",
+          "downloadURL": "https://github.com/spananide/fmhy-ios/releases/download/v1.7.0/FMHY-iOS-v1.7.0.ipa",
+          "size": 4082950
+        },
         {
           "version": "1.6.0",
           "date": "2026-11-18T00:10:00Z",
