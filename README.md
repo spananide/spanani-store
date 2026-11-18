@@ -9,46 +9,28 @@
   <img src="https://img.shields.io/badge/Platform-iOS%2017%2B-9955E7?style=flat-square" alt="Platform: iOS 17+">
 </p>
 
+<p align="center">
+  <img src="docs/showcase.png" width="100%" alt="spanani Store on iPhone: Discover, My Apps, app detail and Settings">
+</p>
+
 ## Highlights
 
-<table>
-<tr>
-<td width="50%" valign="top">
-
+**Keep apps alive**
 - **On-device refresh**: LocalDevVPN loops traffic locally so apps refresh without a computer.
-- **My Apps slot bar**: Expiry countdown, slot usage bar (up to 3 apps for free Apple IDs), and "Refresh All".
-- **Background refresh**: Automatic background refresh toggle and notification reminders 24 hours before expiry.
-- **IPA sideloading**: Install any `.ipa` from the Files app using the + button on Discover.
-- **Home screen widget**: Shows remaining days (Settings displays "Widgets: Ready" or "Needs app group").
+- **Slot management**: Expiry countdown, slot usage bar for up to 3 active apps, and a Refresh All button.
+- **Background refresh**: Automatic background refresh toggle with reminders 24 hours before expiry.
+- **Home screen widget**: Shows remaining days before certificate expiry.
 
-</td>
-<td width="50%" valign="top">
+**Find apps**
+- **Custom sources**: Add AltStore source JSON URLs to browse community repositories.
+- **IPA sideloading**: Install any `.ipa` directly from the Files app using the + button on Discover.
+- **Changes feed**: View latest versions and release notes across all configured sources.
+- **Included app**: FMHY reader included in default source (`spananide/fmhy-ios`).
 
-- **Custom sources**: Add AltStore source JSON URLs to browse more apps.
-- **Changes feed**: View latest versions and release notes across all sources.
-- **Included app**: FMHY in default source (iOS reader for FMHY wiki by spanani.de, repo `spananide/fmhy-ios`).
+**Make it yours**
 - **Favourites**: Save favourite apps for quick access.
-- **spanani interface**: Dark purple aesthetic, Bricolage Grotesque font, and 3D mark (English).
-- **Windows installer**: One-click installer setup for Windows 10 and 11.
-
-</td>
-</tr>
-</table>
-
-## Screenshots
-
-<table>
-  <tr>
-    <td><img src="docs/screenshots/discover.png" alt="Discover" width="23%"></td>
-    <td><img src="docs/screenshots/my-apps.png" alt="My Apps" width="23%"></td>
-    <td><img src="docs/screenshots/detail.png" alt="Detail" width="23%"></td>
-    <td><img src="docs/screenshots/settings.png" alt="Settings" width="23%"></td>
-  </tr>
-</table>
-
-<p align="center">
-  <img src="docs/screenshots/installer.png" alt="Windows installer" width="80%">
-</p>
+- **spanani interface**: Dark purple aesthetic with Bricolage Grotesque typography and 3D mark.
+- **Windows installer**: One-click setup tool for Windows 10 and 11.
 
 ## Install
 
@@ -59,9 +41,18 @@
 - Free Apple ID
 - LocalDevVPN from the App Store
 
-1. Download `spanani-installer-setup.exe` from the Releases page of https://github.com/spananide/spanani-installer and run it.
-2. Plug in the iPhone, unlock, and tap Trust. Sign in with your Apple ID in the installer and click "Install spanani Store" (if Apple says the certificate limit is reached, choose which old certificate to revoke and continue).
-3. On the iPhone: go to Settings > General > VPN & Device Management and trust your Apple ID; install LocalDevVPN from the App Store and turn it on; open spanani Store and sign in once.
+1. **Run the installer on your PC**  
+   Download `spanani-installer-setup.exe` from the [spanani-installer Releases](https://github.com/spananide/spanani-installer/releases) page and run it.
+
+2. **Connect iPhone and install**  
+   Connect your iPhone, unlock it, and tap Trust. Sign in with your Apple ID in the installer and click "Install spanani Store" (revoke an old certificate if prompted).
+
+3. **Trust profile and enable VPN on device**  
+   On your iPhone, go to Settings > General > VPN & Device Management and trust your Apple ID certificate. Install LocalDevVPN from the App Store, turn it on, then open spanani Store and sign in.
+
+<p align="center">
+  <img src="docs/screenshots/installer.png" width="640" alt="spanani Installer">
+</p>
 
 ## FAQ
 
@@ -87,7 +78,7 @@ Yes. In the Sources tab, tap +.
 
 <details>
 <summary>Is this affiliated with Apple, SideStore or FMHY?</summary>
-No. Not affiliated with, endorsed by or sponsored by Apple, SideStore, AltStore or FMHY.
+Not affiliated with, endorsed by or sponsored by Apple, SideStore, AltStore or FMHY.
 </details>
 
 ## Build from source
