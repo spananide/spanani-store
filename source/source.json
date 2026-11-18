@@ -13,11 +13,18 @@
       "iconURL": "https://raw.githubusercontent.com/spananide/spanani-store/develop/source/icons/store.png",
       "tintColor": "9955E7",
       "category": "utilities",
-      "version": "0.7.1",
-      "date": "2026-11-18T12:00:00Z",
+      "version": "0.8.0",
+      "date": "2026-11-18T16:14:00Z",
       "downloadURL": "https://github.com/spananide/spanani-store/releases/latest/download/SpananiStore.ipa",
-      "size": 30642547,
+      "size": 30697541,
       "versions": [
+        {
+          "version": "0.8.0",
+          "date": "2026-11-18T16:14:00Z",
+          "localizedDescription": "Suggest an app: send an .ipa from Discover.",
+          "downloadURL": "https://github.com/spananide/spanani-store/releases/latest/download/SpananiStore.ipa",
+          "size": 30697541
+        },
         {
           "version": "0.7.1",
           "date": "2026-11-18T12:00:00Z",
