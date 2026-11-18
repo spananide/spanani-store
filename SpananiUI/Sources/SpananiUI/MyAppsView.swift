@@ -304,6 +304,24 @@ private struct UpdateAppRowView: View {
         model.apps.first { $0.id == item.id }
     }
 
+    // The store itself is hidden from `model.apps`, so build the update target from the installed row.
+    private var updateTarget: StoreItem {
+        storeApp ?? StoreItem(
+            id: item.id,
+            name: item.name,
+            subtitle: "",
+            developer: "",
+            description: "",
+            category: "",
+            versionString: item.latestVersion ?? item.versionString,
+            sizeBytes: 0,
+            sourceName: "",
+            tint: item.tint,
+            symbol: item.symbol,
+            iconURL: item.iconURL
+        )
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 14) {
@@ -327,13 +345,11 @@ private struct UpdateAppRowView: View {
                 Spacer()
 
                 InstallButton(
-                    state: .updateAvailable,
+                    state: model.installStates[item.id] ?? .updateAvailable,
                     minHeight: 32,
                     fontSize: 14
                 ) {
-                    if let app = storeApp {
-                        model.install(app)
-                    }
+                    model.install(updateTarget)
                 }
             }
             .padding(.vertical, 12)
