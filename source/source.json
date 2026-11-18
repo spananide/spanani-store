@@ -42,20 +42,27 @@
       "name": "FMHY",
       "bundleIdentifier": "de.spanani.fmhy",
       "developerName": "spanani.de",
-      "subtitle": "Wiki & Link-Prüfer",
-      "localizedDescription": "Die FMHY-Wiki mit Suche, Lesezeichen und Link-Prüfung.",
+      "subtitle": "Wiki & link checker",
+      "localizedDescription": "The FMHY wiki with search, bookmarks and link checking.",
       "iconURL": "https://raw.githubusercontent.com/spananide/spanani-store/develop/source/icons/fmhy.png",
       "tintColor": "9955E7",
       "category": "utilities",
-      "version": "1.5.1",
-      "date": "2026-11-16T00:00:00Z",
-      "downloadURL": "https://github.com/spananide/fmhy-ios/releases/download/v1.5.1/FMHY-iOS-v1.5.1.ipa",
-      "size": 4108026,
+      "version": "1.6.0",
+      "date": "2026-11-18T00:10:00Z",
+      "downloadURL": "https://github.com/spananide/fmhy-ios/releases/download/v1.6.0/FMHY-iOS-v1.6.0.ipa",
+      "size": 4023587,
       "versions": [
+        {
+          "version": "1.6.0",
+          "date": "2026-11-18T00:10:00Z",
+          "localizedDescription": "Native iOS redesign.",
+          "downloadURL": "https://github.com/spananide/fmhy-ios/releases/download/v1.6.0/FMHY-iOS-v1.6.0.ipa",
+          "size": 4023587
+        },
         {
           "version": "1.5.1",
           "date": "2026-11-16T00:00:00Z",
-          "localizedDescription": "Leser, Download-Benachrichtigung, Vollbericht in der App.",
+          "localizedDescription": "Reader, download notification, full report in the app.",
           "downloadURL": "https://github.com/spananide/fmhy-ios/releases/download/v1.5.1/FMHY-iOS-v1.5.1.ipa",
           "size": 4108026
         }
