@@ -29,6 +29,13 @@ public extension StoreActions {
     func installIPA(_ url: URL, progress: @escaping (Double) -> Void) async throws {}
 }
 
+public enum SubmitState: Equatable {
+    case idle
+    case uploading(Double)
+    case done
+    case failed(String)
+}
+
 @MainActor
 public final class StoreModel: ObservableObject {
     @Published public var apps: [StoreItem]
@@ -45,6 +52,9 @@ public final class StoreModel: ObservableObject {
     @Published public var ipaName: String?
     @Published public var activeLimit: Int
     @Published public var lastError: String?
+    @Published public var submitState: SubmitState = .idle
+
+    private static let submitEndpoint = URL(string: "https://store-api.spanani.de/submit")!
 
     public var actions: StoreActions?
 
@@ -71,6 +81,7 @@ public final class StoreModel: ObservableObject {
         self.ipaName = nil
         self.activeLimit = activeLimit
         self.lastError = nil
+        self.submitState = .idle
         self.actions = actions
         self.autoRefreshEnabled = autoRefreshEnabled
 
@@ -466,5 +477,146 @@ public final class StoreModel: ObservableObject {
             self.account.appleID = nil
             Haptics.notify(.success)
         }
+    }
+
+    public func submit(fileURL: URL, appName: String, note: String) {
+        submitState = .uploading(0.0)
+        Haptics.impact(.medium)
+
+        Task {
+            let hasAccess = fileURL.startAccessingSecurityScopedResource()
+            defer {
+                if hasAccess {
+                    fileURL.stopAccessingSecurityScopedResource()
+                }
+            }
+
+            guard fileURL.pathExtension.lowercased() == "ipa" else {
+                self.submitState = .failed("The file must be an .ipa file.")
+                Haptics.notify(.error)
+                return
+            }
+
+            let fileSize: Int64
+            if let resourceValues = try? fileURL.resourceValues(forKeys: [.fileSizeKey]),
+               let size = resourceValues.fileSize {
+                fileSize = Int64(size)
+            } else if let attrs = try? FileManager.default.attributesOfItem(atPath: fileURL.path),
+                      let size = attrs[.size] as? Int64 {
+                fileSize = size
+            } else {
+                self.submitState = .failed("Could not determine file size.")
+                Haptics.notify(.error)
+                return
+            }
+
+            let minSize: Int64 = 1024
+            let maxSize: Int64 = 104_857_600
+
+            guard fileSize >= minSize else {
+                self.submitState = .failed("The file is too small (minimum 1 KB).")
+                Haptics.notify(.error)
+                return
+            }
+
+            guard fileSize <= maxSize else {
+                self.submitState = .failed("The file exceeds the 100 MB limit.")
+                Haptics.notify(.error)
+                return
+            }
+
+            var request = URLRequest(url: Self.submitEndpoint)
+            request.httpMethod = "POST"
+            request.timeoutInterval = 600
+            request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
+
+            let rawFileName = fileURL.lastPathComponent
+            let encodedFileName = rawFileName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? rawFileName
+            request.setValue(encodedFileName, forHTTPHeaderField: "X-File-Name")
+
+            let trimmedAppName = appName.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmedAppName.isEmpty {
+                let truncated = String(trimmedAppName.prefix(60))
+                let encoded = truncated.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? truncated
+                request.setValue(encoded, forHTTPHeaderField: "X-App-Name")
+            }
+
+            let trimmedNote = note.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmedNote.isEmpty {
+                let truncated = String(trimmedNote.prefix(300))
+                let encoded = truncated.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? truncated
+                request.setValue(encoded, forHTTPHeaderField: "X-Note")
+            }
+
+            // Upload task delegate tracking progress; needs proper testing with varied network speeds
+            let progressDelegate = SubmitProgressDelegate { [weak self] fraction in
+                Task { @MainActor in
+                    guard let self = self else { return }
+                    if case .uploading = self.submitState {
+                        self.submitState = .uploading(min(max(fraction, 0.0), 1.0))
+                    }
+                }
+            }
+
+            do {
+                let (data, response) = try await URLSession.shared.upload(
+                    for: request,
+                    fromFile: fileURL,
+                    delegate: progressDelegate
+                )
+
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    self.submitState = .failed("Upload failed. Check your connection and try again.")
+                    Haptics.notify(.error)
+                    return
+                }
+
+                if httpResponse.statusCode == 200 {
+                    self.submitState = .done
+                    Haptics.notify(.success)
+                } else {
+                    struct ErrorResponse: Decodable {
+                        let error: String?
+                    }
+                    let errorMessage: String
+                    if let decoded = try? JSONDecoder().decode(ErrorResponse.self, from: data),
+                       let serverError = decoded.error,
+                       !serverError.isEmpty {
+                        errorMessage = serverError
+                    } else {
+                        errorMessage = "Upload failed. Check your connection and try again."
+                    }
+                    self.submitState = .failed(errorMessage)
+                    Haptics.notify(.error)
+                }
+            } catch {
+                self.submitState = .failed("Upload failed. Check your connection and try again.")
+                Haptics.notify(.error)
+            }
+        }
+    }
+
+    public func resetSubmit() {
+        submitState = .idle
+    }
+}
+
+private final class SubmitProgressDelegate: NSObject, URLSessionTaskDelegate, Sendable {
+    private let onProgress: @Sendable (Double) -> Void
+
+    init(onProgress: @escaping @Sendable (Double) -> Void) {
+        self.onProgress = onProgress
+    }
+
+    func urlSession(
+        _ session: URLSession,
+        task: URLSessionTask,
+        didSendBodyData bytesSent: Int64,
+        totalBytesSent: Int64,
+        totalBytesExpectedToSend: Int64
+    ) {
+        guard totalBytesExpectedToSend > 0 else { return }
+        let fraction = Double(totalBytesSent) / Double(totalBytesExpectedToSend)
+        onProgress(fraction)
     }
 }

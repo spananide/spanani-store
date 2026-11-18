@@ -6,6 +6,7 @@ struct PreviewApp: App {
     @StateObject private var model: StoreModel
     private let initialTab: Int
     private let initialDetail: Int?
+    private let initialSubmit: Bool
 
     init() {
         let store = MainActor.assumeIsolated {
@@ -24,6 +25,8 @@ struct PreviewApp: App {
         } else {
             initialDetail = nil
         }
+
+        initialSubmit = UserDefaults.standard.bool(forKey: "submit")
     }
 
     var body: some Scene {
@@ -31,7 +34,8 @@ struct PreviewApp: App {
             SpananiRoot(
                 model: model,
                 initialTab: initialTab,
-                initialDetail: initialDetail
+                initialDetail: initialDetail,
+                initialSubmit: initialSubmit
             )
         }
     }

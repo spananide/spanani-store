@@ -6,11 +6,18 @@ public struct SpananiRoot: View {
     @State private var selectedTab: Int
     @State private var selectedAppForDetail: StoreItem?
     private let initialDetail: Int?
+    private let initialSubmit: Bool
 
-    public init(model: StoreModel, initialTab: Int = 0, initialDetail: Int? = nil) {
+    public init(
+        model: StoreModel,
+        initialTab: Int = 0,
+        initialDetail: Int? = nil,
+        initialSubmit: Bool = false
+    ) {
         self.model = model
         self.initialDetail = initialDetail
-        _selectedTab = State(initialValue: initialTab)
+        self.initialSubmit = initialSubmit
+        _selectedTab = State(initialValue: initialSubmit ? 0 : initialTab)
         SpananiFont.register()
 
         if let detail = initialDetail,
@@ -77,6 +84,7 @@ public struct SpananiRoot: View {
         case 0:
             DiscoverView(
                 selectedApp: $selectedAppForDetail,
+                initialSubmit: initialSubmit,
                 onNavigateToTab: { tabIndex in
                     selectedTab = tabIndex
                 }
@@ -95,6 +103,7 @@ public struct SpananiRoot: View {
         default:
             DiscoverView(
                 selectedApp: $selectedAppForDetail,
+                initialSubmit: initialSubmit,
                 onNavigateToTab: { tabIndex in
                     selectedTab = tabIndex
                 }

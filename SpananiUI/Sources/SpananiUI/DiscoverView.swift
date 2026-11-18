@@ -5,6 +5,7 @@ import UniformTypeIdentifiers
 struct DiscoverView: View {
     @EnvironmentObject private var model: StoreModel
     @Binding var selectedApp: StoreItem?
+    var initialSubmit: Bool = false
     var onNavigateToTab: ((Int) -> Void)? = nil
 
     @State private var searchText: String = ""
@@ -16,6 +17,8 @@ struct DiscoverView: View {
     @State private var isConfirmInstallPresented: Bool = false
     @State private var pendingIPAURL: URL? = nil
     @State private var pendingIPAName: String = ""
+    @State private var isSubmitPresented: Bool = false
+    @State private var hasHandledInitialSubmit: Bool = false
 
     private var isSearching: Bool {
         !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -97,6 +100,16 @@ struct DiscoverView: View {
                 }
             }
             Button("Cancel", role: .cancel) {}
+        }
+        .sheet(isPresented: $isSubmitPresented) {
+            SubmitSheet()
+                .environmentObject(model)
+        }
+        .onAppear {
+            if initialSubmit && !hasHandledInitialSubmit {
+                hasHandledInitialSubmit = true
+                isSubmitPresented = true
+            }
         }
     }
 
@@ -210,6 +223,9 @@ struct DiscoverView: View {
 
             categorySection
             allAppsSection
+
+            suggestAppCard(title: "Missing an app?")
+                .padding(.horizontal, 20)
         }
     }
 
@@ -351,6 +367,9 @@ struct DiscoverView: View {
 
             if filteredApps.isEmpty {
                 emptySearchPlaceholder
+
+                suggestAppCard(title: "No results. Suggest it?")
+                    .padding(.horizontal, 20)
             } else {
                 VStack(spacing: 0) {
                     ForEach(filteredApps) { app in
@@ -383,6 +402,60 @@ struct DiscoverView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 48)
+    }
+
+    // MARK: - Suggest App Card
+
+    private func suggestAppCard(title: String) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 12) {
+                ZStack {
+                    Color.brand.opacity(0.18)
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(.brand)
+                }
+                .frame(width: 40, height: 40)
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.brand(18, .extrabold))
+                        .foregroundColor(.ink)
+
+                    Text("Suggest an .ipa and we will review it.")
+                        .font(.system(size: 13))
+                        .foregroundColor(.inkSoft)
+                }
+
+                Spacer()
+            }
+
+            Button {
+                Haptics.impact(.medium)
+                isSubmitPresented = true
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 13, weight: .bold))
+                    Text("Suggest an app")
+                        .font(.brand(14, .semibold))
+                }
+                .foregroundColor(.white)
+                .padding(.horizontal, 16)
+                .frame(height: 36)
+                .background(Color.brand)
+                .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(18)
+        .background(Color.paperRaised)
+        .clipShape(RoundedRectangle(cornerRadius: SpananiRadius.card, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: SpananiRadius.card, style: .continuous)
+                .stroke(Color.paperSunk, lineWidth: 1)
+        )
     }
 
     // MARK: - Changes Content

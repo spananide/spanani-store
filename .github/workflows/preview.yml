@@ -55,6 +55,7 @@ jobs:
           shot shot-sources.png -tab 2
           shot shot-settings.png -tab 3
           shot shot-detail.png -tab 0 -detail 0
+          shot shot-submit.png -tab 0 -submit 1
 
       - name: Upload Screenshots
         uses: actions/upload-artifact@v4
