@@ -16,14 +16,14 @@
       "version": "0.7.1",
       "date": "2026-11-18T12:00:00Z",
       "downloadURL": "https://github.com/spananide/spanani-store/releases/latest/download/SpananiStore.ipa",
-      "size": 30635565,
+      "size": 30642547,
       "versions": [
         {
           "version": "0.7.1",
           "date": "2026-11-18T12:00:00Z",
           "localizedDescription": "Delete button, pull to refresh on My Apps, deactivate fix.",
           "downloadURL": "https://github.com/spananide/spanani-store/releases/latest/download/SpananiStore.ipa",
-          "size": 30635565
+          "size": 30642547
         },
         {
           "version": "0.6.0",
