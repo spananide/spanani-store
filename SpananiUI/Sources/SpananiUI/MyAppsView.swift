@@ -35,6 +35,9 @@ struct MyAppsView: View {
             .padding(.top, 16)
             .padding(.bottom, 140)
         }
+        .refreshable {
+            await model.reloadSources()
+        }
         .background(Color.paper)
         .sheet(item: $internalSelectedApp) { app in
             AppDetailView(app: app)
