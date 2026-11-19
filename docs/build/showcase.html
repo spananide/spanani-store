@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>spanani Store Showcase</title>
+  <style>
+    @font-face {
+      font-family: "Bricolage Grotesque";
+      src: url("fonts/BricolageGrotesque-ExtraBold.ttf");
+      font-weight: 800;
+      font-style: normal;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 2400px;
+      height: 1250px;
+      overflow: hidden;
+      background-color: #0F0B1A;
+      background-image:
+        radial-gradient(circle at 50% 50%, rgba(153, 85, 231, 0.35) 0%, rgba(153, 85, 231, 0.12) 40%, transparent 70%),
+        radial-gradient(circle at 10% 90%, rgba(153, 85, 231, 0.20) 0%, transparent 45%),
+        radial-gradient(rgba(255, 255, 255, 0.06) 1.5px, transparent 1.5px);
+      background-size:
+        100% 100%,
+        100% 100%,
+        32px 32px;
+      background-position:
+        center center,
+        left bottom,
+        0 0;
+      background-repeat:
+        no-repeat,
+        no-repeat,
+        repeat;
+      font-family: "Bricolage Grotesque", "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      width: 2400px;
+      height: 1250px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding-top: 54px;
+      gap: 60px;
+    }
+
+    .phone-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 470px;
+    }
+
+    /* Stagger: phones 1 and 3 sit 60 px lower than 2 and 4 */
+    .phone-item.stagger-low {
+      transform: translateY(60px);
+    }
+
+    .phone-frame {
+      width: 470px;
+      height: 1018px;
+      border: 14px solid #07050D;
+      border-radius: 76px;
+      overflow: hidden;
+      background: #07050D;
+      box-shadow: 0 0 0 2px #6B4BE8, 18px 18px 0 #2A1B5E;
+      transform-origin: center center;
+    }
+
+    .phone-frame img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Rotations: -3deg, +2deg, -2deg, +3deg */
+    .phone-1 .phone-frame {
+      transform: rotate(-3deg);
+    }
+    .phone-2 .phone-frame {
+      transform: rotate(2deg);
+    }
+    .phone-3 .phone-frame {
+      transform: rotate(-2deg);
+    }
+    .phone-4 .phone-frame {
+      transform: rotate(3deg);
+    }
+
+    .pill-container {
+      margin-top: 14px;
+      display: flex;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .sticker-pill {
+      display: inline-block;
+      background-color: #FFC857;
+      color: #07050D;
+      font-family: "Bricolage Grotesque", "Segoe UI", sans-serif;
+      font-weight: 800;
+      font-size: 22px;
+      line-height: 1;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 10px 26px;
+      border-radius: 9999px;
+      box-shadow: 4px 4px 0 #07050D;
+      transform: rotate(-3deg);
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="phone-item phone-1 stagger-low">
+      <div class="phone-frame">
+        <img src="../screenshots/discover.png" alt="Discover">
+      </div>
+      <div class="pill-container">
+        <div class="sticker-pill">DISCOVER</div>
+      </div>
+    </div>
+
+    <div class="phone-item phone-2">
+      <div class="phone-frame">
+        <img src="../screenshots/my-apps.png" alt="My Apps">
+      </div>
+      <div class="pill-container">
+        <div class="sticker-pill">MY APPS</div>
+      </div>
+    </div>
+
+    <div class="phone-item phone-3 stagger-low">
+      <div class="phone-frame">
+        <img src="../screenshots/detail.png" alt="Detail">
+      </div>
+      <div class="pill-container">
+        <div class="sticker-pill">DETAIL</div>
+      </div>
+    </div>
+
+    <div class="phone-item phone-4">
+      <div class="phone-frame">
+        <img src="../screenshots/settings.png" alt="Settings">
+      </div>
+      <div class="pill-container">
+        <div class="sticker-pill">SETTINGS</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

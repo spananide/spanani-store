@@ -1,0 +1,37 @@
+name: Build
+
+on:
+  push:
+    branches: [develop]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - run: brew install ldid xcbeautify
+
+      - name: Build IPA
+        run: make build fakesign ipa
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SpananiStore.ipa
+          path: SideStore.ipa
+
+      - name: Publish GitHub release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp SideStore.ipa SpananiStore.ipa
+          gh release create "$GITHUB_REF_NAME" SpananiStore.ipa --title "spanani Store $GITHUB_REF_NAME" --notes "Install with spanani Installer." \
+            || gh release upload "$GITHUB_REF_NAME" SpananiStore.ipa --clobber
