@@ -172,7 +172,7 @@ private struct WelcomeStep: View {
                 .multilineTextAlignment(.center)
                 .minimumScaleFactor(0.85)
 
-            Text(NSLocalizedString("Install and refresh apps directly on your device, without a computer.", comment: ""))
+            Text(NSLocalizedString("Install and refresh apps directly on your device.", comment: ""))
                 .font(.system(size: 15))
                 .foregroundColor(.inkSoft)
                 .multilineTextAlignment(.center)

@@ -9,7 +9,7 @@
       "bundleIdentifier": "de.spanani.store",
       "developerName": "spanani.de",
       "subtitle": "Your own app store",
-      "localizedDescription": "Installs and refreshes apps right on your iPhone, no computer needed.",
+      "localizedDescription": "Installs and refreshes apps right on your iPhone. A computer is needed for the first install and when pairing or signing has to be redone.",
       "iconURL": "https://raw.githubusercontent.com/spananide/spanani-store/develop/source/icons/store.png",
       "tintColor": "9955E7",
       "category": "utilities",

@@ -17,7 +17,7 @@
 ## Highlights
 
 **Keep apps alive**
-- **On-device refresh**: LocalDevVPN loops traffic locally so apps refresh without a computer.
+- **On-device refresh**: LocalDevVPN loops traffic locally so apps refresh on the iPhone. You still need a Windows PC for the first install, and again to pair or install the store again if pairing breaks or the store's own certificate expires.
 - **Slot management**: Expiry countdown, slot usage bar for up to 3 active apps, and a Refresh All button.
 - **Background refresh**: Automatic background refresh toggle with reminders 24 hours before expiry.
 - **Home screen widget**: Shows remaining days before certificate expiry.
