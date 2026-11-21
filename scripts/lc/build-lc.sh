@@ -54,6 +54,9 @@ rm "$FW/SideStore"
 mv "$FW/SideStore.dylib" "$FW/SideStore"
 ldid -S"" "$FW/SideStore"
 cp "$WORK/LCAppInfo.plist" "$FW/"
+# The sideloader (isideload) only gives the store an app group + certificate when the framework
+# carries SideStore's bundle id, and LC's hooks override our own id at runtime anyway.
+/usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier com.SideStore.SideStore" "$FW/Info.plist"
 
 # Step 6: Overwrite intents and patch appintents metadata
 echo "==> Updating intents and metadata"
@@ -81,8 +84,8 @@ cd "$WORK/lc" && zip -qr "$OUTPUT_IPA" Payload -x "._*" -x ".DS_Store" -x "__MAC
 # Step 9: Verification
 echo "==> Verifying build output"
 STORE_BUNDLE_ID="$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$FW/Info.plist")"
-if [ "$STORE_BUNDLE_ID" != "de.spanani.store" ]; then
-    echo "ERROR: Expected CFBundleIdentifier de.spanani.store, got $STORE_BUNDLE_ID" >&2
+if [ "$STORE_BUNDLE_ID" != "com.SideStore.SideStore" ]; then
+    echo "ERROR: Expected CFBundleIdentifier com.SideStore.SideStore, got $STORE_BUNDLE_ID" >&2
     exit 1
 fi
 echo "Store CFBundleIdentifier: $STORE_BUNDLE_ID"
