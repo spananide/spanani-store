@@ -3,7 +3,10 @@ set -euo pipefail
 
 # Build LiveContainer with spanani Store embedded as SideStoreApp.framework.
 
-LC_TAG="${LC_TAG:-3.8.0}"
+# Default is the nightly: 3.8.0 still ships the old split store (AltStoreCore.framework) and its hooks do not fit our single-binary store.
+LC_TAG="${LC_TAG:-nightly}"
+LC_REF="$LC_TAG"
+[ "$LC_TAG" = nightly ] && LC_REF=main
 
 if [ "$#" -lt 2 ]; then
     echo "Usage: $0 <path-to-SpananiStore.ipa> <output-ipa-path>" >&2
@@ -43,7 +46,7 @@ cp "$FW/LCAppInfo.plist" "$WORK/LCAppInfo.plist"
 # Step 4: Download dylibify tool and widget entitlements
 echo "==> Downloading dylibify and widget entitlements"
 curl -fsSL -o "$WORK/dylibify" https://github.com/LiveContainer/dylibify/releases/download/1.0/dylibify && chmod +x "$WORK/dylibify"
-curl -fsSL -o "$WORK/widget.xml" "https://raw.githubusercontent.com/LiveContainer/LiveContainer/$LC_TAG/.github/sidelc/LiveWidgetExtension_adhoc.xml"
+curl -fsSL -o "$WORK/widget.xml" "https://raw.githubusercontent.com/LiveContainer/LiveContainer/$LC_REF/.github/sidelc/LiveWidgetExtension_adhoc.xml"
 
 # Step 5: Replace store framework and convert executable to dylib
 echo "==> Replacing Store framework and dylibifying"

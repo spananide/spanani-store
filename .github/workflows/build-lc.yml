@@ -11,7 +11,7 @@ on:
       lc_tag:
         description: 'LiveContainer release tag'
         required: false
-        default: '3.8.0'
+        default: 'nightly'
         type: string
 
 permissions:
