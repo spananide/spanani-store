@@ -1,0 +1,45 @@
+name: Build LiveContainer
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'spanani Store release tag to use, empty = latest'
+        required: false
+        default: ''
+        type: string
+      lc_tag:
+        description: 'LiveContainer release tag'
+        required: false
+        default: '3.8.0'
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - run: brew install ldid
+
+      - name: Download SpananiStore IPA
+        run: |
+          if [ -n "${{ inputs.tag }}" ]; then
+            gh release download "${{ inputs.tag }}" -R "$GITHUB_REPOSITORY" -p SpananiStore.ipa -O SpananiStore.ipa --clobber
+          else
+            gh release download -R "$GITHUB_REPOSITORY" -p SpananiStore.ipa -O SpananiStore.ipa --clobber
+          fi
+
+      - name: Build LiveContainer IPA
+        run: |
+          LC_TAG="${{ inputs.lc_tag }}" bash scripts/lc/build-lc.sh SpananiStore.ipa "$PWD/LiveContainer+spanani.ipa"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LiveContainer+spanani.ipa
+          path: LiveContainer+spanani.ipa
