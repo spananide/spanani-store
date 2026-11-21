@@ -11,6 +11,13 @@ import SideSign
 
 enum AnisetteProvider {
     static func fetch(handler: AnisetteServerHandler? = nil) async throws -> ALTAnisetteData {
+        var data = try await fetchRaw(handler: handler)
+        // gsa.apple.com answers 503 to "<macOS;" since 2026-11-19: keep the "Mac OS X" spelling Apple's own frameworks still send
+        data.clientInfo = data.clientInfo.replacingOccurrences(of: "<macOS;", with: "<Mac OS X;")
+        return data
+    }
+
+    private static func fetchRaw(handler: AnisetteServerHandler? = nil) async throws -> ALTAnisetteData {
         if UserDefaults.standard.useOnDeviceAnisette {
             debugLog("[AnisetteProvider] Fetching anisette via On-Device Anisette (ODA)...")
             do {
