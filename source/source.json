@@ -5,54 +5,6 @@
   "sourceURL": "https://raw.githubusercontent.com/spananide/spanani-store/develop/source/source.json",
   "apps": [
     {
-      "name": "spanani Store",
-      "bundleIdentifier": "de.spanani.store",
-      "developerName": "spanani.de",
-      "subtitle": "Your own app store",
-      "localizedDescription": "Installs and refreshes apps right on your iPhone, no computer needed.",
-      "iconURL": "https://raw.githubusercontent.com/spananide/spanani-store/develop/source/icons/store.png",
-      "tintColor": "9955E7",
-      "category": "utilities",
-      "version": "0.8.1",
-      "date": "2026-11-18T17:50:00Z",
-      "downloadURL": "https://github.com/spananide/spanani-store/releases/latest/download/SpananiStore.ipa",
-      "size": 30698185,
-      "versions": [
-        {
-          "version": "0.8.1",
-          "date": "2026-11-18T17:50:00Z",
-          "localizedDescription": "Fixes the Update button for the store itself.",
-          "downloadURL": "https://github.com/spananide/spanani-store/releases/latest/download/SpananiStore.ipa",
-          "size": 30698185
-        },
-        {
-          "version": "0.8.0",
-          "date": "2026-11-18T16:14:00Z",
-          "localizedDescription": "Suggest an app: send an .ipa from Discover.",
-          "downloadURL": "https://github.com/spananide/spanani-store/releases/latest/download/SpananiStore.ipa",
-          "size": 30697541
-        },
-        {
-          "version": "0.7.1",
-          "date": "2026-11-18T12:00:00Z",
-          "localizedDescription": "Delete button, pull to refresh on My Apps, deactivate fix.",
-          "downloadURL": "https://github.com/spananide/spanani-store/releases/latest/download/SpananiStore.ipa",
-          "size": 30642547
-        },
-        {
-          "version": "0.6.0",
-          "date": "2026-11-17T00:00:00Z",
-          "localizedDescription": "New interface, own source.",
-          "downloadURL": "https://github.com/spananide/spanani-store/releases/latest/download/SpananiStore.ipa",
-          "size": 30633566
-        }
-      ],
-      "appPermissions": {
-        "entitlements": [],
-        "privacy": {}
-      }
-    },
-    {
       "name": "FMHY",
       "bundleIdentifier": "de.spanani.fmhy",
       "developerName": "spanani.de",
