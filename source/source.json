@@ -71,6 +71,33 @@
         "entitlements": [],
         "privacy": {}
       }
+    },
+    {
+      "name": "Minecraft",
+      "bundleIdentifier": "com.mojang.minecraftpe",
+      "developerName": "spanani.de",
+      "subtitle": "From spanani.de",
+      "localizedDescription": "Published by spanani.de.",
+      "iconURL": "https://raw.githubusercontent.com/spananide/spanani-store/develop/source/icons/com.mojang.minecraftpe.png",
+      "tintColor": "9955E7",
+      "category": "utilities",
+      "version": "1.26.52",
+      "date": "2026-11-22T23:01:24Z",
+      "downloadURL": "https://github.com/spananide/spanani-store/releases/download/community/com.mojang.minecraftpe-1.26.52.ipa",
+      "size": 722458074,
+      "versions": [
+        {
+          "version": "1.26.52",
+          "date": "2026-11-22T23:01:24Z",
+          "localizedDescription": "Published by spanani.de.",
+          "downloadURL": "https://github.com/spananide/spanani-store/releases/download/community/com.mojang.minecraftpe-1.26.52.ipa",
+          "size": 722458074
+        }
+      ],
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {}
+      }
     }
   ],
   "news": []
