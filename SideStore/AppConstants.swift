@@ -135,13 +135,13 @@ public enum AppConstants {
         public static let appleAuthDevices          = Constants.URLs.appleAuthDevices
         public static let appleAccount              = URL(string: "https://account.apple.com")!
 
-        // SideStore Documentation & Community URLs
-        public static let pairingDocumentation      = URL(string: "https://docs.sidestore.io/docs/advanced/pairing-file")!
-        public static let errorCodesDocumentation   = URL(string: "https://docs.sidestore.io/docs/troubleshooting/error-codes")!
+        // spanani Documentation & Community URLs
+        public static let pairingDocumentation      = URL(string: "https://github.com/spananide/spanani-store#install")!
+        public static let errorCodesDocumentation   = URL(string: "https://github.com/spananide/spanani-store/issues")!
         public static let sideStoreWebsite          = URL(string: "https://spanani.de")!
-        public static let sideStoreGitHub           = URL(string: "https://github.com/SideStore")!
-        public static let sideStoreIssues           = URL(string: "https://github.com/SideStore/SideStore/issues")!
-        public static let sideStoreDiscord          = URL(string: "https://discord.gg/sidestore-949183273383395328")!
+        public static let sideStoreGitHub           = URL(string: "https://github.com/spananide/spanani-store")!
+        public static let sideStoreIssues           = URL(string: "https://github.com/spananide/spanani-store/issues")!
+        public static let sideStoreDiscord          = URL(string: "https://discord.gg/NfVExtZZJs")!
     }
 
     public enum Minimuxer {
