@@ -1011,7 +1011,7 @@
 		};
 		A8E8DEA43059BC8800F69B47 /* XCRemoteSwiftPackageReference "CodeSignKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/mahee96/CodeSignKit";
+			repositoryURL = "https://github.com/spananide/CodeSignKit";
 			requirement = {
 				branch = main;
 				kind = branch;

@@ -4,16 +4,16 @@
     {
       "identity" : "anisettekit",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/mahee96/AnisetteKit.git",
+      "location" : "https://github.com/spananide/AnisetteKit.git",
       "state" : {
         "branch" : "main",
-        "revision" : "db8b41022697b6c19be8a5f01a1ce834145a2a26"
+        "revision" : "c89df2f95df99d85ef5b5da753f853cd6e469858"
       }
     },
     {
       "identity" : "codesignkit",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/mahee96/CodeSignKit",
+      "location" : "https://github.com/spananide/CodeSignKit",
       "state" : {
         "branch" : "main",
         "revision" : "d0c67710fda9a2646b9e829cb2cf443892728371"
@@ -22,7 +22,7 @@
     {
       "identity" : "gsacryptokit",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/mahee96/GSACryptoKit.git",
+      "location" : "https://github.com/spananide/GSACryptoKit.git",
       "state" : {
         "branch" : "main",
         "revision" : "eae2590eaf17fe98ce9c76b3ec2bd42b780eb123"
@@ -40,7 +40,7 @@
     {
       "identity" : "libdeflate",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/SideStore/libdeflate",
+      "location" : "https://github.com/spananide/libdeflate",
       "state" : {
         "branch" : "master",
         "revision" : "da6c7dae03b78dc71af973664575e4209786fbfe"
@@ -67,7 +67,7 @@
     {
       "identity" : "remotepairingkit",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/mahee96/RemotePairingKit.git",
+      "location" : "https://github.com/spananide/RemotePairingKit.git",
       "state" : {
         "branch" : "main",
         "revision" : "e3f70d16c0c551540a533a39d540e78e5b0a60a8"
