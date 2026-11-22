@@ -8,11 +8,6 @@ on:
         required: false
         default: ''
         type: string
-      lc_tag:
-        description: 'LiveContainer release tag'
-        required: false
-        default: 'nightly'
-        type: string
 
 permissions:
   contents: read
@@ -37,7 +32,7 @@ jobs:
 
       - name: Build LiveContainer IPA
         run: |
-          LC_TAG="${{ inputs.lc_tag }}" bash scripts/lc/build-lc.sh SpananiStore.ipa "$PWD/LiveContainer+spanani.ipa"
+          bash scripts/lc/build-lc.sh SpananiStore.ipa "$PWD/LiveContainer+spanani.ipa"
 
       - uses: actions/upload-artifact@v4
         with:

@@ -3,10 +3,10 @@ set -euo pipefail
 
 # Build LiveContainer with spanani Store embedded as SideStoreApp.framework.
 
-# Default is the nightly: 3.8.0 still ships the old split store (AltStoreCore.framework) and its hooks do not fit our single-binary store.
-LC_TAG="${LC_TAG:-nightly}"
-LC_REF="$LC_TAG"
-[ "$LC_TAG" = nightly ] && LC_REF=main
+# Inputs come from our own pinned release (LiveContainer nightly 2026-11-20; 3.8.0 still ships the old
+# split store whose hooks do not fit our single-binary store). To move to a newer LC, upload new files
+# to the lc-base release and update the checksums below.
+LC_BASE="https://github.com/spananide/spanani-store/releases/download/lc-base"
 
 if [ "$#" -lt 2 ]; then
     echo "Usage: $0 <path-to-SpananiStore.ipa> <output-ipa-path>" >&2
@@ -20,9 +20,17 @@ OUTPUT_IPA="$(cd "$(dirname "$2")" && pwd)/$(basename "$2")"
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 
-# Step 1: Download and extract official LiveContainer+SideStore release
-echo "==> Downloading and extracting LiveContainer $LC_TAG"
-gh release download "$LC_TAG" -R LiveContainer/LiveContainer -p 'LiveContainer+SideStore.ipa' -O "$WORK/lc.ipa"
+# Step 1: Download pinned LiveContainer base, dylibify tool and widget entitlements
+echo "==> Downloading pinned LiveContainer base"
+curl -fsSL -o "$WORK/lc.ipa" "$LC_BASE/LiveContainer%2BSideStore.ipa"
+curl -fsSL -o "$WORK/dylibify" "$LC_BASE/dylibify" && chmod +x "$WORK/dylibify"
+curl -fsSL -o "$WORK/widget.xml" "$LC_BASE/LiveWidgetExtension_adhoc.xml"
+(cd "$WORK" && shasum -a 256 -c - <<'EOF'
+d520ae1003f21afa1c38004dfd760b1b305b4df4b63ff54fb6859e836a6f5088  lc.ipa
+6d23f6a2fc4d8442f87caa1161aebe6ecaafd0e8c41ce205da007efb04fc82c7  dylibify
+1f6bcd298a18abf692bd5bf167179ce5e78d3a4bd635ce12f04f586a0e143335  widget.xml
+EOF
+)
 mkdir "$WORK/lc" && unzip -q "$WORK/lc.ipa" -d "$WORK/lc"
 LC_APP="$WORK/lc/Payload/LiveContainer.app"
 FW="$LC_APP/Frameworks/SideStoreApp.framework"
@@ -42,11 +50,6 @@ if [ ! -f "$FW/LCAppInfo.plist" ]; then
     exit 1
 fi
 cp "$FW/LCAppInfo.plist" "$WORK/LCAppInfo.plist"
-
-# Step 4: Download dylibify tool and widget entitlements
-echo "==> Downloading dylibify and widget entitlements"
-curl -fsSL -o "$WORK/dylibify" https://github.com/LiveContainer/dylibify/releases/download/1.0/dylibify && chmod +x "$WORK/dylibify"
-curl -fsSL -o "$WORK/widget.xml" "https://raw.githubusercontent.com/LiveContainer/LiveContainer/$LC_REF/.github/sidelc/LiveWidgetExtension_adhoc.xml"
 
 # Step 5: Replace store framework and convert executable to dylib
 echo "==> Replacing Store framework and dylibifying"
