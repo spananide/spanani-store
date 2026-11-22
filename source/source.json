@@ -98,6 +98,33 @@
         "entitlements": [],
         "privacy": {}
       }
+    },
+    {
+      "name": "YouTube Plus",
+      "bundleIdentifier": "com.google.ios.youtube",
+      "developerName": "spanani.de",
+      "subtitle": "From spanani.de",
+      "localizedDescription": "Published by spanani.de.",
+      "iconURL": "https://raw.githubusercontent.com/spananide/spanani-store/develop/source/icons/store.png",
+      "tintColor": "9955E7",
+      "category": "utilities",
+      "version": "21.39.4",
+      "date": "2026-11-22T23:21:03Z",
+      "downloadURL": "https://github.com/spananide/spanani-store/releases/download/community/com.google.ios.youtube-21.39.4.ipa",
+      "size": 153156146,
+      "versions": [
+        {
+          "version": "21.39.4",
+          "date": "2026-11-22T23:21:03Z",
+          "localizedDescription": "Published by spanani.de.",
+          "downloadURL": "https://github.com/spananide/spanani-store/releases/download/community/com.google.ios.youtube-21.39.4.ipa",
+          "size": 153156146
+        }
+      ],
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {}
+      }
     }
   ],
   "news": []
