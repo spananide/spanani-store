@@ -92,6 +92,33 @@
         "entitlements": [],
         "privacy": {}
       }
+    },
+    {
+      "name": "Feather",
+      "bundleIdentifier": "thewonderofyou.Feather",
+      "developerName": "claration (open source, GPL-3.0)",
+      "subtitle": "On-device app manager",
+      "localizedDescription": "Free, open-source on-device app manager and installer. Official build from the developer's GitHub release.",
+      "iconURL": "https://raw.githubusercontent.com/spananide/spanani-store/develop/source/icons/feather.png",
+      "tintColor": "6E7BF2",
+      "category": "utilities",
+      "version": "2.9.0",
+      "date": "2026-07-05T02:11:53Z",
+      "downloadURL": "https://github.com/claration/feather/releases/download/v2.9.0/Feather.ipa",
+      "size": 14241853,
+      "versions": [
+        {
+          "version": "2.9.0",
+          "date": "2026-07-05T02:11:53Z",
+          "localizedDescription": "Official release v2.9.0.",
+          "downloadURL": "https://github.com/claration/feather/releases/download/v2.9.0/Feather.ipa",
+          "size": 14241853
+        }
+      ],
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {}
+      }
     }
   ],
   "news": []
