@@ -125,6 +125,33 @@
         "entitlements": [],
         "privacy": {}
       }
+    },
+    {
+      "name": "Spotify Premium",
+      "bundleIdentifier": "com.spotify.client",
+      "developerName": "spanani.de",
+      "subtitle": "From spanani.de",
+      "localizedDescription": "Published by spanani.de.",
+      "iconURL": "https://raw.githubusercontent.com/spananide/spanani-store/develop/source/icons/com.spotify.client.png",
+      "tintColor": "9955E7",
+      "category": "utilities",
+      "version": "9.1.76",
+      "date": "2026-11-23T00:13:57Z",
+      "downloadURL": "https://github.com/spananide/spanani-store/releases/download/community/com.spotify.client-9.1.76.ipa",
+      "size": 130249097,
+      "versions": [
+        {
+          "version": "9.1.76",
+          "date": "2026-11-23T00:13:57Z",
+          "localizedDescription": "Published by spanani.de.",
+          "downloadURL": "https://github.com/spananide/spanani-store/releases/download/community/com.spotify.client-9.1.76.ipa",
+          "size": 130249097
+        }
+      ],
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {}
+      }
     }
   ],
   "news": []
