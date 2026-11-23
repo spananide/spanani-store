@@ -152,6 +152,33 @@
         "entitlements": [],
         "privacy": {}
       }
+    },
+    {
+      "name": "Geometry Dash",
+      "bundleIdentifier": "com.robtop.geometryjump",
+      "developerName": "spanani.de",
+      "subtitle": "From spanani.de",
+      "localizedDescription": "Published by spanani.de.",
+      "iconURL": "https://raw.githubusercontent.com/spananide/spanani-store/develop/source/icons/com.robtop.geometryjump.png",
+      "tintColor": "9955E7",
+      "category": "utilities",
+      "version": "2.208",
+      "date": "2026-11-23T00:14:47Z",
+      "downloadURL": "https://github.com/spananide/spanani-store/releases/download/community/com.robtop.geometryjump-2.208.ipa",
+      "size": 146978709,
+      "versions": [
+        {
+          "version": "2.208",
+          "date": "2026-11-23T00:14:47Z",
+          "localizedDescription": "Published by spanani.de.",
+          "downloadURL": "https://github.com/spananide/spanani-store/releases/download/community/com.robtop.geometryjump-2.208.ipa",
+          "size": 146978709
+        }
+      ],
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {}
+      }
     }
   ],
   "news": []
