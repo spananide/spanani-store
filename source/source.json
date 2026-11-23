@@ -206,6 +206,33 @@
         "entitlements": [],
         "privacy": {}
       }
+    },
+    {
+      "name": "GTok",
+      "bundleIdentifier": "com.zhiliaoapp.musically",
+      "developerName": "spanani.de",
+      "subtitle": "From spanani.de",
+      "localizedDescription": "No ads, download posts & stories, anonymous reading",
+      "iconURL": "https://raw.githubusercontent.com/spananide/spanani-store/develop/source/icons/com.zhiliaoapp.musically.png",
+      "tintColor": "9955E7",
+      "category": "utilities",
+      "version": "46.5.0",
+      "date": "2026-11-23T00:16:50Z",
+      "downloadURL": "https://github.com/spananide/spanani-store/releases/download/community/com.zhiliaoapp.musically-46.5.0.ipa",
+      "size": 451400232,
+      "versions": [
+        {
+          "version": "46.5.0",
+          "date": "2026-11-23T00:16:50Z",
+          "localizedDescription": "No ads, download posts & stories, anonymous reading",
+          "downloadURL": "https://github.com/spananide/spanani-store/releases/download/community/com.zhiliaoapp.musically-46.5.0.ipa",
+          "size": 451400232
+        }
+      ],
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {}
+      }
     }
   ],
   "news": []
