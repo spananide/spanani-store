@@ -233,6 +233,33 @@
         "entitlements": [],
         "privacy": {}
       }
+    },
+    {
+      "name": "NetflixVIP",
+      "bundleIdentifier": "com.chengzu.book",
+      "developerName": "spanani.de",
+      "subtitle": "From spanani.de",
+      "localizedDescription": "No ads, download posts & stories, anonymous reading",
+      "iconURL": "https://raw.githubusercontent.com/spananide/spanani-store/develop/source/icons/com.chengzu.book.png",
+      "tintColor": "9955E7",
+      "category": "utilities",
+      "version": "3.3.4",
+      "date": "2026-11-23T00:20:41Z",
+      "downloadURL": "https://github.com/spananide/spanani-store/releases/download/community/com.chengzu.book-3.3.4.ipa",
+      "size": 33669934,
+      "versions": [
+        {
+          "version": "3.3.4",
+          "date": "2026-11-23T00:20:41Z",
+          "localizedDescription": "No ads, download posts & stories, anonymous reading",
+          "downloadURL": "https://github.com/spananide/spanani-store/releases/download/community/com.chengzu.book-3.3.4.ipa",
+          "size": 33669934
+        }
+      ],
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {}
+      }
     }
   ],
   "news": []
