@@ -631,7 +631,7 @@ private struct FeaturedCard: View {
                             tint: app.tint,
                             symbol: app.symbol,
                             iconURL: app.iconURL,
-                            size: 124
+                            size: 108
                         )
                         Spacer()
                     }
@@ -688,7 +688,7 @@ private struct FeaturedCard: View {
                 }
                 .padding(18)
             }
-            .frame(width: cardWidth, height: 400)
+            .frame(width: cardWidth, height: 340)
             .clipShape(RoundedRectangle(cornerRadius: SpananiRadius.card, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: SpananiRadius.card, style: .continuous)
