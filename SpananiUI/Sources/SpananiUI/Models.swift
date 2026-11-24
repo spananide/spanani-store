@@ -19,6 +19,8 @@ public struct StoreItem: Identifiable, Hashable {
     public var permissions: [String]
     public var isFeatured: Bool
     public var heroTagline: String
+    public var isCommunity: Bool
+    public var date: Date?
 
     public init(
         id: String,
@@ -37,7 +39,9 @@ public struct StoreItem: Identifiable, Hashable {
         whatsNew: String = "",
         permissions: [String] = [],
         isFeatured: Bool = false,
-        heroTagline: String = ""
+        heroTagline: String = "",
+        isCommunity: Bool = false,
+        date: Date? = nil
     ) {
         self.id = id
         self.name = name
@@ -56,6 +60,8 @@ public struct StoreItem: Identifiable, Hashable {
         self.permissions = permissions
         self.isFeatured = isFeatured
         self.heroTagline = heroTagline
+        self.isCommunity = isCommunity
+        self.date = date
     }
 
     public static func == (lhs: StoreItem, rhs: StoreItem) -> Bool {

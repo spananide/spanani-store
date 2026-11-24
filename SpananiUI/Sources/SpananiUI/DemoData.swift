@@ -4,6 +4,7 @@ import SwiftUI
 public enum DemoData {
     @MainActor
     public static func makeModel() -> StoreModel {
+        let now = Date()
         let apps: [StoreItem] = [
             StoreItem(
                 id: "de.spanani.fmhy",
@@ -22,7 +23,9 @@ public enum DemoData {
                 whatsNew: "Version 1.6.0 introduces an improved link filter, dark mode optimizations, and faster loading times for offline articles.",
                 permissions: ["Network Access", "Local Storage"],
                 isFeatured: true,
-                heroTagline: "Developer Favorite"
+                heroTagline: "Developer Favorite",
+                isCommunity: false,
+                date: now.addingTimeInterval(-1 * 86400)
             ),
             StoreItem(
                 id: "de.spanani.kippe",
@@ -41,7 +44,9 @@ public enum DemoData {
                 whatsNew: "10 new levels, support for enhanced haptics, and finer gyroscope sensitivity.",
                 permissions: ["Motion Sensors"],
                 isFeatured: true,
-                heroTagline: "New in Store"
+                heroTagline: "New in Store",
+                isCommunity: false,
+                date: now.addingTimeInterval(-3 * 86400)
             ),
             StoreItem(
                 id: "de.spanani.pausenklau",
@@ -60,7 +65,9 @@ public enum DemoData {
                 whatsNew: "New category for number puzzles and synchronized high scores.",
                 permissions: ["Local Storage"],
                 isFeatured: false,
-                heroTagline: ""
+                heroTagline: "",
+                isCommunity: false,
+                date: now.addingTimeInterval(-7 * 86400)
             ),
             StoreItem(
                 id: "de.spanani.tagesspiele",
@@ -79,7 +86,9 @@ public enum DemoData {
                 whatsNew: "Added weekend special puzzles with double word length.",
                 permissions: ["Notifications"],
                 isFeatured: false,
-                heroTagline: ""
+                heroTagline: "",
+                isCommunity: false,
+                date: now.addingTimeInterval(-12 * 86400)
             ),
             StoreItem(
                 id: "de.spanani.lyricshud",
@@ -98,7 +107,9 @@ public enum DemoData {
                 whatsNew: "Support for real-time multilingual translations.",
                 permissions: ["Media Library", "Background Audio"],
                 isFeatured: true,
-                heroTagline: "Recently Updated"
+                heroTagline: "Recently Updated",
+                isCommunity: false,
+                date: now.addingTimeInterval(-16 * 86400)
             ),
             StoreItem(
                 id: "de.spanani.strullermod",
@@ -117,7 +128,9 @@ public enum DemoData {
                 whatsNew: "Optimized server ping display and automatic connection recovery.",
                 permissions: ["Network Access", "Local Network"],
                 isFeatured: false,
-                heroTagline: ""
+                heroTagline: "",
+                isCommunity: true,
+                date: now.addingTimeInterval(-22 * 86400)
             ),
             StoreItem(
                 id: "de.spanani.kistensortierer",
@@ -136,7 +149,9 @@ public enum DemoData {
                 whatsNew: "Batch scanning mode to quickly capture contents of entire boxes.",
                 permissions: ["Camera", "Local Storage"],
                 isFeatured: false,
-                heroTagline: ""
+                heroTagline: "",
+                isCommunity: true,
+                date: now.addingTimeInterval(-28 * 86400)
             ),
             StoreItem(
                 id: "de.spanani.lautstaerkebooster",
@@ -155,7 +170,9 @@ public enum DemoData {
                 whatsNew: "New speech enhancement mode for extra-clear vocals.",
                 permissions: ["Microphone", "Audio Output"],
                 isFeatured: false,
-                heroTagline: ""
+                heroTagline: "",
+                isCommunity: false,
+                date: now.addingTimeInterval(-35 * 86400)
             ),
             StoreItem(
                 id: "de.spanani.wetterfrosch",
@@ -174,7 +191,9 @@ public enum DemoData {
                 whatsNew: "Minute-by-minute widget updates when severe rain is imminent.",
                 permissions: ["Location Services (While In Use)"],
                 isFeatured: true,
-                heroTagline: "Featured Here"
+                heroTagline: "Featured Here",
+                isCommunity: false,
+                date: now.addingTimeInterval(-42 * 86400)
             ),
             StoreItem(
                 id: "de.spanani.notizzettel",
@@ -193,7 +212,9 @@ public enum DemoData {
                 whatsNew: "Added support for mathematical formulas and Mermaid diagrams.",
                 permissions: ["File Access", "Local Storage"],
                 isFeatured: false,
-                heroTagline: ""
+                heroTagline: "",
+                isCommunity: false,
+                date: now.addingTimeInterval(-48 * 86400)
             ),
             StoreItem(
                 id: "de.spanani.pomodoropur",
@@ -212,7 +233,9 @@ public enum DemoData {
                 whatsNew: "New 'Nordic Forest' sound set and customizable break intervals.",
                 permissions: ["Notifications", "Background Audio"],
                 isFeatured: false,
-                heroTagline: ""
+                heroTagline: "",
+                isCommunity: false,
+                date: now.addingTimeInterval(-54 * 86400)
             ),
             StoreItem(
                 id: "de.spanani.sternenkarte",
@@ -231,7 +254,9 @@ public enum DemoData {
                 whatsNew: "Updated comet catalog and refined AR position accuracy.",
                 permissions: ["Camera", "Compass & Sensors"],
                 isFeatured: false,
-                heroTagline: ""
+                heroTagline: "",
+                isCommunity: false,
+                date: now.addingTimeInterval(-59 * 86400)
             )
         ]
 

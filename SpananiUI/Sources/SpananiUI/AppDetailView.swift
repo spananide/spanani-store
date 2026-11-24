@@ -103,6 +103,14 @@ struct AppDetailView: View {
                 .font(.system(size: 15, weight: .medium))
                 .foregroundColor(.brand)
 
+            if app.isCommunity {
+                CommunityBadge()
+            }
+
+            Text(app.category)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(.inkSoft)
+
             InstallButton(
                 state: model.state(for: app),
                 minHeight: 48,

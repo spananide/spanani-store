@@ -2,6 +2,10 @@ import SwiftUI
 import UIKit
 import UniformTypeIdentifiers
 
+struct CategoryRef: Identifiable {
+    let id: String
+}
+
 struct DiscoverView: View {
     @EnvironmentObject private var model: StoreModel
     @Binding var selectedApp: StoreItem?
@@ -9,9 +13,9 @@ struct DiscoverView: View {
     var onNavigateToTab: ((Int) -> Void)? = nil
 
     @State private var searchText: String = ""
-    @State private var selectedCategory: String = "All"
     @State private var scrolledHeroID: String?
-    @State private var selectedSegment: Int = 0
+    @State private var activeCategory: CategoryRef?
+    @State private var showChanges: Bool = false
 
     @State private var isImporterPresented: Bool = false
     @State private var isConfirmInstallPresented: Bool = false
@@ -19,6 +23,16 @@ struct DiscoverView: View {
     @State private var pendingIPAName: String = ""
     @State private var isSubmitPresented: Bool = false
     @State private var hasHandledInitialSubmit: Bool = false
+
+    init(
+        selectedApp: Binding<StoreItem?>,
+        initialSubmit: Bool = false,
+        onNavigateToTab: ((Int) -> Void)? = nil
+    ) {
+        self._selectedApp = selectedApp
+        self.initialSubmit = initialSubmit
+        self.onNavigateToTab = onNavigateToTab
+    }
 
     private var isSearching: Bool {
         !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -34,24 +48,26 @@ struct DiscoverView: View {
 
     private var filteredApps: [StoreItem] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        if query.isEmpty {
-            if selectedCategory == "All" {
-                return model.apps
-            } else {
-                return model.apps.filter { $0.category == selectedCategory }
-            }
-        } else {
-            return model.apps.filter { app in
-                app.name.lowercased().contains(query)
-                    || app.subtitle.lowercased().contains(query)
-                    || app.developer.lowercased().contains(query)
-            }
+        guard !query.isEmpty else { return [] }
+        return model.apps.filter { app in
+            app.name.lowercased().contains(query)
+                || app.subtitle.lowercased().contains(query)
+                || app.developer.lowercased().contains(query)
         }
+    }
+
+    private var newestColumns: [[StoreItem]] {
+        let items = model.newest
+        var cols: [[StoreItem]] = []
+        for i in stride(from: 0, to: items.count, by: 3) {
+            cols.append(Array(items[i..<min(i + 3, items.count)]))
+        }
+        return cols
     }
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 24) {
                 headerSection
                 searchAndIPARow
 
@@ -59,20 +75,10 @@ struct DiscoverView: View {
                     ipaProgressBanner(progress: progress)
                 }
 
-                SegmentSwitch(
-                    options: ["Apps", "Changes"],
-                    selection: $selectedSegment
-                )
-                .padding(.horizontal, 20)
-
-                if selectedSegment == 0 {
-                    if isSearching {
-                        searchResultsSection
-                    } else {
-                        appsDiscoveryContent
-                    }
+                if isSearching {
+                    searchResultsSection
                 } else {
-                    changesContent
+                    exploreShelves
                 }
             }
             .padding(.top, 16)
@@ -103,6 +109,14 @@ struct DiscoverView: View {
         }
         .sheet(isPresented: $isSubmitPresented) {
             SubmitSheet()
+                .environmentObject(model)
+        }
+        .sheet(item: $activeCategory) { cat in
+            CategoryListView(category: cat.id)
+                .environmentObject(model)
+        }
+        .sheet(isPresented: $showChanges) {
+            ChangesListView()
                 .environmentObject(model)
         }
         .onAppear {
@@ -209,27 +223,80 @@ struct DiscoverView: View {
         .padding(.horizontal, 20)
     }
 
-    // MARK: - Apps Discovery Content
+    // MARK: - Explore Shelves
 
-    private var appsDiscoveryContent: some View {
-        VStack(alignment: .leading, spacing: 24) {
+    @ViewBuilder
+    private var exploreShelves: some View {
+        VStack(alignment: .leading, spacing: 28) {
+            // 1. Featured Carousel
+            if !model.featured.isEmpty {
+                featuredSection
+            }
+
+            // 2. Favourites Row
             if !model.favoriteApps.isEmpty {
                 favoritesSection
             }
 
-            if !model.featured.isEmpty {
-                heroSection
+            // 3. New & Updated Shelf
+            if !model.newest.isEmpty {
+                newAndUpdatedShelf
             }
 
-            categorySection
-            allAppsSection
+            // 4. Category Shelves
+            categoryShelves
 
-            suggestAppCard(title: "Missing an app?")
-                .padding(.horizontal, 20)
+            // 5. From the Community Shelf + Suggest Card
+            communityShelf
+
+            // 6. Browse Categories Grid
+            browseCategoriesSection
+
+            // 7. Latest Changes Section
+            if !model.changes.isEmpty {
+                latestChangesSection
+            }
         }
     }
 
-    // MARK: - Favorites Section
+    // MARK: - 1. Featured Carousel
+
+    private var featuredSection: some View {
+        VStack(spacing: 12) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 16) {
+                    ForEach(model.featured) { app in
+                        FeaturedCard(app: app) {
+                            selectedApp = app
+                        }
+                        .id(app.id)
+                    }
+                }
+                .padding(.horizontal, 20)
+                .scrollTargetLayout()
+            }
+            .scrollTargetBehavior(.viewAligned)
+            .scrollPosition(id: $scrolledHeroID)
+
+            if model.featured.count > 1 {
+                heroIndicatorDots
+            }
+        }
+    }
+
+    private var heroIndicatorDots: some View {
+        HStack(spacing: 6) {
+            ForEach(0..<model.featured.count, id: \.self) { index in
+                Capsule()
+                    .fill(index == currentHeroIndex ? Color.brand : Color.paperSunk)
+                    .frame(width: index == currentHeroIndex ? 20 : 6, height: 6)
+                    .animation(.spring(response: 0.3), value: currentHeroIndex)
+            }
+        }
+        .padding(.top, 4)
+    }
+
+    // MARK: - 2. Favorites Section
 
     private var favoritesSection: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -272,65 +339,110 @@ struct DiscoverView: View {
         }
     }
 
-    // MARK: - Hero Carousel
+    // MARK: - 3. New & Updated Shelf
 
-    private var heroSection: some View {
-        VStack(spacing: 12) {
+    private var newAndUpdatedShelf: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            ShelfHeader(title: "New & Updated")
+                .padding(.horizontal, 20)
+
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 16) {
-                    ForEach(model.featured) { app in
-                        HeroCardView(app: app) {
-                            selectedApp = app
-                        } onInstall: {
-                            model.install(app)
+                HStack(alignment: .top, spacing: 16) {
+                    ForEach(0..<newestColumns.count, id: \.self) { colIndex in
+                        VStack(spacing: 0) {
+                            ForEach(newestColumns[colIndex]) { app in
+                                CompactAppRow(app: app) {
+                                    selectedApp = app
+                                }
+                            }
                         }
-                        .id(app.id)
+                        .frame(width: max(UIScreen.main.bounds.width - 56, 260))
                     }
                 }
                 .padding(.horizontal, 20)
                 .scrollTargetLayout()
             }
             .scrollTargetBehavior(.viewAligned)
-            .scrollPosition(id: $scrolledHeroID)
-
-            if model.featured.count > 1 {
-                heroIndicatorDots
-            }
         }
     }
 
-    private var heroIndicatorDots: some View {
-        HStack(spacing: 6) {
-            ForEach(0..<model.featured.count, id: \.self) { index in
-                Capsule()
-                    .fill(index == currentHeroIndex ? Color.brand : Color.paperSunk)
-                    .frame(width: index == currentHeroIndex ? 20 : 6, height: 6)
-                    .animation(.spring(response: 0.3), value: currentHeroIndex)
-            }
-        }
-        .padding(.top, 4)
-    }
+    // MARK: - 4. Category Shelves
 
-    // MARK: - Category Section
+    @ViewBuilder
+    private var categoryShelves: some View {
+        ForEach(model.categories, id: \.self) { category in
+            let categoryApps = model.apps(in: category)
+            if !categoryApps.isEmpty {
+                VStack(alignment: .leading, spacing: 14) {
+                    ShelfHeader(title: category) {
+                        activeCategory = CategoryRef(id: category)
+                    }
+                    .padding(.horizontal, 20)
 
-    private var categorySection: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                CategoryChip(
-                    title: "All",
-                    isSelected: selectedCategory == "All"
-                ) {
-                    Haptics.selection()
-                    selectedCategory = "All"
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(alignment: .top, spacing: 14) {
+                            ForEach(categoryApps) { app in
+                                ShelfCard(app: app) {
+                                    selectedApp = app
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                    }
                 }
+            }
+        }
+    }
 
+    // MARK: - 5. Community Shelf & Suggest Card
+
+    @ViewBuilder
+    private var communityShelf: some View {
+        if !model.communityApps.isEmpty {
+            VStack(alignment: .leading, spacing: 14) {
+                ShelfHeader(title: "From the community")
+                    .padding(.horizontal, 20)
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(alignment: .top, spacing: 14) {
+                        ForEach(model.communityApps) { app in
+                            ShelfCard(app: app, showCommunityBadge: true) {
+                                selectedApp = app
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                }
+            }
+        }
+
+        suggestAppCard(title: "Missing an app?")
+            .padding(.horizontal, 20)
+    }
+
+    // MARK: - 6. Browse Categories
+
+    private var browseCategoriesSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            ShelfHeader(title: "Browse categories")
+                .padding(.horizontal, 20)
+
+            LazyVGrid(
+                columns: [
+                    GridItem(.flexible(), spacing: 12),
+                    GridItem(.flexible(), spacing: 12)
+                ],
+                spacing: 12
+            ) {
                 ForEach(model.categories, id: \.self) { category in
-                    CategoryChip(
-                        title: category,
-                        isSelected: selectedCategory == category
+                    let count = model.apps(in: category).count
+                    let tint = model.apps(in: category).first?.tint ?? Color.brand
+                    CategoryTile(
+                        category: category,
+                        count: count,
+                        tint: tint
                     ) {
-                        Haptics.selection()
-                        selectedCategory = category
+                        activeCategory = CategoryRef(id: category)
                     }
                 }
             }
@@ -338,20 +450,18 @@ struct DiscoverView: View {
         }
     }
 
-    // MARK: - All Apps Section
+    // MARK: - 7. Latest Changes
 
-    private var allAppsSection: some View {
+    private var latestChangesSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            SectionHeader(title: "All Apps", count: filteredApps.count)
-                .padding(.horizontal, 20)
+            ShelfHeader(title: "Latest changes") {
+                showChanges = true
+            }
+            .padding(.horizontal, 20)
 
             VStack(spacing: 0) {
-                ForEach(filteredApps) { app in
-                    AppRowView(app: app) {
-                        selectedApp = app
-                    } onInstall: {
-                        model.install(app)
-                    }
+                ForEach(Array(model.changes.sorted(by: { $0.date > $1.date }).prefix(3))) { change in
+                    ChangeRowView(change: change)
                 }
             }
             .padding(.horizontal, 20)
@@ -373,10 +483,8 @@ struct DiscoverView: View {
             } else {
                 VStack(spacing: 0) {
                     ForEach(filteredApps) { app in
-                        AppRowView(app: app) {
+                        CompactAppRow(app: app) {
                             selectedApp = app
-                        } onInstall: {
-                            model.install(app)
                         }
                     }
                 }
@@ -458,98 +566,6 @@ struct DiscoverView: View {
         )
     }
 
-    // MARK: - Changes Content
-
-    private var changesContent: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            if model.changes.isEmpty {
-                emptyChangesView
-            } else {
-                ForEach(groupedChanges) { group in
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text(group.title)
-                            .font(.brand(17, .semibold))
-                            .foregroundColor(.inkSoft)
-                            .padding(.horizontal, 20)
-
-                        VStack(spacing: 0) {
-                            ForEach(group.items) { item in
-                                ChangeRowView(change: item)
-                            }
-                        }
-                        .padding(.horizontal, 20)
-                    }
-                }
-            }
-        }
-    }
-
-    private var emptyChangesView: some View {
-        VStack(spacing: 12) {
-            Spacer()
-                .frame(height: 32)
-
-            Mark3DTile(size: 96)
-
-            Text("No changes yet")
-                .font(.brand(22, .extrabold))
-                .foregroundColor(.ink)
-
-            Text("New versions from your sources show up here.")
-                .font(.system(size: 14))
-                .foregroundColor(.inkSoft)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 36)
-    }
-
-    private struct ChangeGroup: Identifiable {
-        let id: String
-        let title: String
-        let items: [ChangeItem]
-    }
-
-    private var groupedChanges: [ChangeGroup] {
-        let sorted = model.changes.sorted(by: { $0.date > $1.date })
-        let calendar = Calendar.current
-        let dayFormatter = DateFormatter()
-        dayFormatter.locale = Locale(identifier: "en_GB")
-        dayFormatter.dateFormat = "d MMM"
-
-        var groups: [ChangeGroup] = []
-        var currentTitle = ""
-        var currentItems: [ChangeItem] = []
-
-        for item in sorted {
-            let title: String
-            if calendar.isDateInToday(item.date) {
-                title = "Today"
-            } else if calendar.isDateInYesterday(item.date) {
-                title = "Yesterday"
-            } else {
-                title = dayFormatter.string(from: item.date)
-            }
-
-            if title == currentTitle {
-                currentItems.append(item)
-            } else {
-                if !currentItems.isEmpty {
-                    groups.append(ChangeGroup(id: currentTitle, title: currentTitle, items: currentItems))
-                }
-                currentTitle = title
-                currentItems = [item]
-            }
-        }
-
-        if !currentItems.isEmpty {
-            groups.append(ChangeGroup(id: currentTitle, title: currentTitle, items: currentItems))
-        }
-
-        return groups
-    }
-
     // MARK: - File Importer Handler
 
     private func handleFileImporter(result: Result<[URL], Error>) {
@@ -580,13 +596,12 @@ struct DiscoverView: View {
     }
 }
 
-// MARK: - Hero Card View
+// MARK: - Featured Card
 
-private struct HeroCardView: View {
+private struct FeaturedCard: View {
     @EnvironmentObject private var model: StoreModel
     let app: StoreItem
     var onSelect: () -> Void
-    var onInstall: () -> Void
 
     private var cardWidth: CGFloat {
         min(max(UIScreen.main.bounds.width * 0.86, 300.0), 360.0)
@@ -594,11 +609,86 @@ private struct HeroCardView: View {
 
     var body: some View {
         Button(action: onSelect) {
-            VStack(spacing: 0) {
-                topZone
-                bottomZone
+            ZStack(alignment: .topLeading) {
+                LinearGradient(
+                    colors: [app.tint, app.tint.opacity(0.75)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+
+                LinearGradient(
+                    colors: [Color.clear, Color.black.opacity(0.45)],
+                    startPoint: .center,
+                    endPoint: .bottom
+                )
+
+                VStack {
+                    Spacer()
+                        .frame(height: 52)
+                    HStack {
+                        Spacer()
+                        AppIconView(
+                            tint: app.tint,
+                            symbol: app.symbol,
+                            iconURL: app.iconURL,
+                            size: 124
+                        )
+                        Spacer()
+                    }
+                    Spacer()
+                }
+
+                HStack(spacing: 6) {
+                    if !app.heroTagline.isEmpty {
+                        Text(app.heroTagline.uppercased())
+                            .font(.brand(11, .semibold))
+                            .foregroundColor(.ink)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(Color.paperSunk)
+                            .clipShape(Capsule())
+                    }
+
+                    if app.isCommunity {
+                        CommunityBadge()
+                    }
+                }
+                .padding(16)
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Spacer()
+
+                    Text(app.name)
+                        .font(.brand(28, .extrabold))
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+
+                    Text(app.subtitle)
+                        .font(.system(size: 14))
+                        .foregroundColor(Color.white.opacity(0.85))
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+
+                    HStack(alignment: .center, spacing: 12) {
+                        InstallButton(
+                            state: model.state(for: app),
+                            minHeight: 34,
+                            fontSize: 15
+                        ) {
+                            model.install(app)
+                        }
+
+                        Text(Formatters.fileSize(app.sizeBytes))
+                            .font(.brand(12, .semibold))
+                            .foregroundColor(Color.white.opacity(0.85))
+
+                        Spacer()
+                    }
+                    .padding(.top, 4)
+                }
+                .padding(18)
             }
-            .frame(width: cardWidth, height: 390)
+            .frame(width: cardWidth, height: 400)
             .clipShape(RoundedRectangle(cornerRadius: SpananiRadius.card, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: SpananiRadius.card, style: .continuous)
@@ -618,101 +708,19 @@ private struct HeroCardView: View {
             }
         }
     }
-
-    private var topZone: some View {
-        ZStack(alignment: .topLeading) {
-            app.tint
-
-            if !app.heroTagline.isEmpty {
-                Text(app.heroTagline.uppercased())
-                    .font(.brand(12, .semibold))
-                    .foregroundColor(.ink)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(Color.paperSunk)
-                    .clipShape(Capsule())
-                    .padding(16)
-            }
-
-            Center {
-                AppIconView(
-                    tint: app.tint,
-                    symbol: app.symbol,
-                    iconURL: app.iconURL,
-                    size: 120
-                )
-            }
-        }
-        .frame(height: 220)
-    }
-
-    private var bottomZone: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(app.name)
-                .font(.brand(28, .extrabold))
-                .foregroundColor(.ink)
-                .lineLimit(1)
-
-            Text(app.subtitle)
-                .font(.system(size: 14))
-                .foregroundColor(.inkSoft)
-                .lineLimit(2)
-                .multilineTextAlignment(.leading)
-
-            Spacer()
-
-            HStack(alignment: .center, spacing: 12) {
-                InstallButton(
-                    state: model.state(for: app),
-                    minHeight: 34,
-                    fontSize: 15,
-                    action: onInstall
-                )
-
-                Text(Formatters.fileSize(app.sizeBytes))
-                    .font(.brand(12, .semibold))
-                    .foregroundColor(.inkSoft)
-
-                Spacer()
-            }
-        }
-        .padding(18)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.paperRaised)
-    }
 }
 
-// MARK: - Center Helper
+// MARK: - Compact App Row
 
-private struct Center<Content: View>: View {
-    let content: () -> Content
-
-    init(@ViewBuilder content: @escaping () -> Content) {
-        self.content = content
-    }
-
-    var body: some View {
-        HStack {
-            Spacer()
-            content()
-            Spacer()
-        }
-        .frame(maxHeight: .infinity)
-    }
-}
-
-// MARK: - App Row View
-
-private struct AppRowView: View {
+private struct CompactAppRow: View {
     @EnvironmentObject private var model: StoreModel
     let app: StoreItem
     var onSelect: () -> Void
-    var onInstall: () -> Void
 
     var body: some View {
         VStack(spacing: 0) {
             Button(action: onSelect) {
-                HStack(spacing: 14) {
+                HStack(spacing: 12) {
                     AppIconView(
                         tint: app.tint,
                         symbol: app.symbol,
@@ -722,30 +730,27 @@ private struct AppRowView: View {
 
                     VStack(alignment: .leading, spacing: 3) {
                         Text(app.name)
-                            .font(.brand(17, .semibold))
+                            .font(.brand(16, .semibold))
                             .foregroundColor(.ink)
                             .lineLimit(1)
 
                         Text(app.subtitle)
-                            .font(.system(size: 14))
+                            .font(.system(size: 13))
                             .foregroundColor(.inkSoft)
                             .lineLimit(1)
-
-                        Text("\(app.category) · \(Formatters.fileSize(app.sizeBytes))")
-                            .font(.system(size: 12, weight: .regular))
-                            .foregroundColor(.inkFaint)
                     }
 
-                    Spacer()
+                    Spacer(minLength: 8)
 
                     InstallButton(
                         state: model.state(for: app),
-                        minHeight: 32,
-                        fontSize: 14,
-                        action: onInstall
-                    )
+                        minHeight: 30,
+                        fontSize: 13
+                    ) {
+                        model.install(app)
+                    }
                 }
-                .padding(.vertical, 12)
+                .padding(.vertical, 10)
             }
             .buttonStyle(.plain)
             .contextMenu {
@@ -763,7 +768,325 @@ private struct AppRowView: View {
             Rectangle()
                 .fill(Color.paperSunk)
                 .frame(height: 1)
-                .padding(.leading, 70)
+                .padding(.leading, 68)
+        }
+    }
+}
+
+// MARK: - Shelf Card
+
+private struct ShelfCard: View {
+    @EnvironmentObject private var model: StoreModel
+    let app: StoreItem
+    var showCommunityBadge: Bool = false
+    var onSelect: () -> Void
+
+    var body: some View {
+        Button(action: onSelect) {
+            VStack(spacing: 8) {
+                if showCommunityBadge {
+                    CommunityBadge()
+                }
+
+                AppIconView(
+                    tint: app.tint,
+                    symbol: app.symbol,
+                    iconURL: app.iconURL,
+                    size: 84
+                )
+
+                Text(app.name)
+                    .font(.brand(15, .semibold))
+                    .foregroundColor(.ink)
+                    .lineLimit(1)
+                    .multilineTextAlignment(.center)
+
+                Text(app.subtitle)
+                    .font(.system(size: 12))
+                    .foregroundColor(.inkSoft)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+                    .frame(height: 32)
+
+                InstallButton(
+                    state: model.state(for: app),
+                    minHeight: 28,
+                    fontSize: 13
+                ) {
+                    model.install(app)
+                }
+            }
+            .padding(12)
+            .frame(width: 150)
+            .background(app.tint.opacity(0.18))
+            .clipShape(RoundedRectangle(cornerRadius: SpananiRadius.tile, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: SpananiRadius.tile, style: .continuous)
+                    .stroke(Color.paperSunk, lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+        .contextMenu {
+            Button {
+                model.toggleFavorite(app.id)
+            } label: {
+                if model.isFavorite(app.id) {
+                    Label("Remove from Favourites", systemImage: "star.slash")
+                } else {
+                    Label("Add to Favourites", systemImage: "star")
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Category Tile
+
+private struct CategoryTile: View {
+    let category: String
+    let count: Int
+    let tint: Color
+    var action: () -> Void
+
+    private var symbol: String {
+        switch category {
+        case "Games": return "gamecontroller.fill"
+        case "Media": return "play.rectangle.fill"
+        case "Utilities": return "wrench.and.screwdriver.fill"
+        case "Developer": return "hammer.fill"
+        case "Social": return "bubble.left.and.bubble.right.fill"
+        case "Photo & Video": return "camera.fill"
+        case "Lifestyle": return "heart.fill"
+        case "Education": return "book.fill"
+        default: return "square.grid.2x2.fill"
+        }
+    }
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(category)
+                        .font(.brand(17, .extrabold))
+                        .foregroundColor(.ink)
+                        .lineLimit(1)
+
+                    Text(count == 1 ? "1 app" : "\(count) apps")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.inkSoft)
+                }
+
+                Spacer()
+
+                Image(systemName: symbol)
+                    .font(.system(size: 24, weight: .semibold))
+                    .foregroundColor(tint)
+            }
+            .padding(.horizontal, 14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(height: 78)
+            .background(tint.opacity(0.18))
+            .clipShape(RoundedRectangle(cornerRadius: SpananiRadius.tile, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: SpananiRadius.tile, style: .continuous)
+                    .stroke(Color.paperSunk, lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Category List View
+
+private struct CategoryListView: View {
+    @EnvironmentObject private var model: StoreModel
+    @Environment(\.dismiss) private var dismiss
+    let category: String
+    @State private var detail: StoreItem?
+
+    var body: some View {
+        ZStack {
+            Color.paper
+                .ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                HStack {
+                    Text(category)
+                        .font(.brand(24, .extrabold))
+                        .foregroundColor(.ink)
+
+                    Spacer()
+
+                    Button {
+                        Haptics.impact(.light)
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundColor(.ink)
+                            .frame(width: 36, height: 36)
+                            .background(Color.paperRaised)
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Close")
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 20)
+                .padding(.bottom, 12)
+
+                let apps = model.apps(in: category)
+                if apps.isEmpty {
+                    Spacer()
+                    Text("No apps in this category.")
+                        .font(.system(size: 14))
+                        .foregroundColor(.inkSoft)
+                    Spacer()
+                } else {
+                    ScrollView(.vertical, showsIndicators: false) {
+                        VStack(spacing: 0) {
+                            ForEach(apps) { app in
+                                CompactAppRow(app: app) {
+                                    detail = app
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 40)
+                    }
+                }
+            }
+        }
+        .sheet(item: $detail) { app in
+            AppDetailView(app: app)
+                .environmentObject(model)
+                .presentationDragIndicator(.visible)
+        }
+    }
+}
+
+// MARK: - Changes Helpers & View
+
+private struct ChangeGroup: Identifiable {
+    let id: String
+    let title: String
+    let items: [ChangeItem]
+}
+
+private func groupChanges(_ changes: [ChangeItem]) -> [ChangeGroup] {
+    let sorted = changes.sorted(by: { $0.date > $1.date })
+    let calendar = Calendar.current
+    let dayFormatter = DateFormatter()
+    dayFormatter.locale = Locale(identifier: "en_GB")
+    dayFormatter.dateFormat = "d MMM"
+
+    var groups: [ChangeGroup] = []
+    var currentTitle = ""
+    var currentItems: [ChangeItem] = []
+
+    for item in sorted {
+        let title: String
+        if calendar.isDateInToday(item.date) {
+            title = "Today"
+        } else if calendar.isDateInYesterday(item.date) {
+            title = "Yesterday"
+        } else {
+            title = dayFormatter.string(from: item.date)
+        }
+
+        if title == currentTitle {
+            currentItems.append(item)
+        } else {
+            if !currentItems.isEmpty {
+                groups.append(ChangeGroup(id: currentTitle, title: currentTitle, items: currentItems))
+            }
+            currentTitle = title
+            currentItems = [item]
+        }
+    }
+
+    if !currentItems.isEmpty {
+        groups.append(ChangeGroup(id: currentTitle, title: currentTitle, items: currentItems))
+    }
+
+    return groups
+}
+
+private struct ChangesListView: View {
+    @EnvironmentObject private var model: StoreModel
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ZStack {
+            Color.paper
+                .ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                HStack {
+                    Text("Latest Changes")
+                        .font(.brand(24, .extrabold))
+                        .foregroundColor(.ink)
+
+                    Spacer()
+
+                    Button {
+                        Haptics.impact(.light)
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundColor(.ink)
+                            .frame(width: 36, height: 36)
+                            .background(Color.paperRaised)
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Close")
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 20)
+                .padding(.bottom, 12)
+
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 18) {
+                        let groups = groupChanges(model.changes)
+                        if groups.isEmpty {
+                            VStack(spacing: 12) {
+                                Spacer()
+                                    .frame(height: 32)
+                                Mark3DTile(size: 96)
+                                Text("No changes yet")
+                                    .font(.brand(22, .extrabold))
+                                    .foregroundColor(.ink)
+                                Text("New versions from your sources show up here.")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.inkSoft)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal, 32)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 36)
+                        } else {
+                            ForEach(groups) { group in
+                                VStack(alignment: .leading, spacing: 10) {
+                                    Text(group.title)
+                                        .font(.brand(17, .semibold))
+                                        .foregroundColor(.inkSoft)
+                                        .padding(.horizontal, 20)
+
+                                    VStack(spacing: 0) {
+                                        ForEach(group.items) { item in
+                                            ChangeRowView(change: item)
+                                        }
+                                    }
+                                    .padding(.horizontal, 20)
+                                }
+                            }
+                        }
+                    }
+                    .padding(.bottom, 40)
+                }
+            }
         }
     }
 }

@@ -346,6 +346,47 @@ struct SectionHeader: View {
     }
 }
 
+// MARK: - ShelfHeader
+
+struct ShelfHeader: View {
+    let title: String
+    var seeAll: (() -> Void)? = nil
+
+    var body: some View {
+        HStack {
+            Text(title)
+                .font(.brand(22, .extrabold))
+                .foregroundColor(.ink)
+
+            Spacer()
+
+            if let seeAll = seeAll {
+                Button(action: seeAll) {
+                    Text("See all")
+                        .font(.brand(14, .semibold))
+                        .foregroundColor(.brand)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+// MARK: - CommunityBadge
+
+struct CommunityBadge: View {
+    var body: some View {
+        Text("COMMUNITY")
+            .font(.brand(10, .semibold))
+            .foregroundColor(.brand)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(Color.brand.opacity(0.16))
+            .clipShape(Capsule())
+    }
+}
+
 // MARK: - SegmentSwitch
 
 public struct SegmentSwitch: View {

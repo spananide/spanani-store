@@ -120,10 +120,19 @@ final class SpananiBridge: StoreActions {
         }
 
         let defaultTint = UIColor(red: 0.6, green: 0.33, blue: 0.91, alpha: 1)
+        let now = Date()
+        let fourteenDaysAgo = now.addingTimeInterval(-14 * 24 * 3600)
 
         let mappedApps: [StoreItem] = sortedApps.enumerated().map { index, app in
+            let date = app.latestSupportedVersion?.date ?? app.versionDate
+            let isCommunity = app.developerName.hasPrefix("Community")
             let isFeatured = index < 4
-            let heroTagline = isFeatured ? (index % 2 == 0 ? "New" : "Popular") : ""
+            let heroTagline: String
+            if let date = date, date >= fourteenDaysAgo {
+                heroTagline = "NEW"
+            } else {
+                heroTagline = ""
+            }
             let tintColor = app.tintColor ?? defaultTint
             let versionString = app.latestSupportedVersion?.version ?? app.version ?? "—"
             let size = app.latestSupportedVersion?.size ?? app._size
@@ -147,7 +156,9 @@ final class SpananiBridge: StoreActions {
                 whatsNew: whatsNew,
                 permissions: permissions,
                 isFeatured: isFeatured,
-                heroTagline: heroTagline
+                heroTagline: heroTagline,
+                isCommunity: isCommunity,
+                date: date
             )
         }
 

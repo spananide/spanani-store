@@ -119,6 +119,18 @@ public final class StoreModel: ObservableObject {
         apps.filter { $0.isFeatured }
     }
 
+    public var newest: [StoreItem] {
+        Array(apps.sorted { ($0.date ?? .distantPast) > ($1.date ?? .distantPast) }.prefix(9))
+    }
+
+    public var communityApps: [StoreItem] {
+        apps.filter { $0.isCommunity }
+    }
+
+    public func apps(in category: String) -> [StoreItem] {
+        apps.filter { $0.category == category }
+    }
+
     public var recent: [StoreItem] {
         Array(apps.prefix(6))
     }
