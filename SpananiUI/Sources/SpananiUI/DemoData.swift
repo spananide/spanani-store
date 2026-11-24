@@ -310,7 +310,6 @@ public enum DemoData {
             vpnOn: true
         )
 
-        let now = Date()
         let changes: [ChangeItem] = [
             ChangeItem(
                 id: "de.spanani.fmhy@1.6.0",
