@@ -66,6 +66,7 @@ struct DiscoverView: View {
     }
 
     var body: some View {
+        ScrollViewReader { proxy in
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: 24) {
                 headerSection
@@ -83,6 +84,13 @@ struct DiscoverView: View {
             }
             .padding(.top, 16)
             .padding(.bottom, 140)
+        }
+        .onAppear {
+            // launch argument "-scroll <shelf id>" lets CI screenshots show lower shelves
+            guard let target = UserDefaults.standard.string(forKey: "scroll") else { return }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                proxy.scrollTo(target, anchor: .top)
+            }
         }
         .refreshable {
             await model.reloadSources()
@@ -124,6 +132,7 @@ struct DiscoverView: View {
                 hasHandledInitialSubmit = true
                 isSubmitPresented = true
             }
+        }
         }
     }
 
@@ -240,7 +249,7 @@ struct DiscoverView: View {
 
             // 3. New & Updated Shelf
             if !model.newest.isEmpty {
-                newAndUpdatedShelf
+                newAndUpdatedShelf.id("new")
             }
 
             // 4. Category Shelves
@@ -250,7 +259,7 @@ struct DiscoverView: View {
             communityShelf
 
             // 6. Browse Categories Grid
-            browseCategoriesSection
+            browseCategoriesSection.id("browse")
 
             // 7. Latest Changes Section
             if !model.changes.isEmpty {
@@ -390,6 +399,7 @@ struct DiscoverView: View {
                         .padding(.horizontal, 20)
                     }
                 }
+                .id(category)
             }
         }
     }

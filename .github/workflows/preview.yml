@@ -56,6 +56,9 @@ jobs:
           shot shot-settings.png -tab 3
           shot shot-detail.png -tab 0 -detail 0
           shot shot-submit.png -tab 0 -submit 1
+          shot shot-shelf-new.png -tab 0 -scroll new
+          shot shot-shelf-games.png -tab 0 -scroll Games
+          shot shot-shelf-browse.png -tab 0 -scroll browse
 
       - name: Upload Screenshots
         uses: actions/upload-artifact@v4
