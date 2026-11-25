@@ -318,12 +318,18 @@ final class PipelineRunner: Sendable
         // instead of failing every install with "Active certificate is missing".
         var activeCertificate = CertificateManager.shared.activeCertificate?.certificate
         if activeCertificate == nil, AuthManager.shared.isAuthenticated {
-            debugLog("[AppManager] performPipeline: no active certificate, provisioning one")
-            let presenter = await MainActor.run { UIApplication.shared.topViewController() }
-            let certificateHandler = SignInFlowHandler(presentingViewController: presenter)
-            let team = try await AuthManager.shared.getAuthenticatedTeam()
-            activeCertificate = try await CertificateProvisioningFlow(handler: certificateHandler).resolveCertificate(for: team)
-            withExtendedLifetime(certificateHandler) {}
+            // Coalesced: parallel installs must share one new certificate, a second one would revoke the first.
+            _ = try await TaskChainCoalescer.shared.coalesce(key: "provision_active_certificate") { () async throws -> Bool in
+                guard CertificateManager.shared.activeCertificate == nil else { return true }
+                debugLog("[AppManager] performPipeline: no active certificate, provisioning one")
+                let presenter = await MainActor.run { UIApplication.shared.topViewController() }
+                let certificateHandler = SignInFlowHandler(presentingViewController: presenter)
+                let team = try await AuthManager.shared.getAuthenticatedTeam()
+                _ = try await CertificateProvisioningFlow(handler: certificateHandler).resolveCertificate(for: team)
+                withExtendedLifetime(certificateHandler) {}
+                return true
+            }
+            activeCertificate = CertificateManager.shared.activeCertificate?.certificate
         }
 
         let context = InstallAppOperationContext(
