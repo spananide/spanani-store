@@ -660,6 +660,17 @@ final class SpananiBridge: StoreActions {
         }
     }
 
+    func openAnisetteSettings() {
+        let view = AnisetteServersView(
+            selected: UserDefaults.standard.menuAnisetteURL,
+            onResetAdiPb: { debugLog("[SpananiBridge] adi.pb cleared, sign in again") }
+        )
+        let host = UIHostingController(rootView: view)
+        host.title = "Anisette Servers"
+        let nav = UINavigationController(rootViewController: host)
+        Self.topViewController?.present(nav, animated: true)
+    }
+
     // MARK: - Auto-Refresh & Reminders
 
     func setAutoRefresh(_ enabled: Bool) async {

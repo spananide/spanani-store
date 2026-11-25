@@ -17,6 +17,7 @@ public protocol StoreActions: AnyObject {
     func setAutoRefresh(_ enabled: Bool) async
     func setReminders(_ enabled: Bool) async -> Bool
     func installIPA(_ url: URL, progress: @escaping (Double) -> Void) async throws
+    func openAnisetteSettings()
 }
 
 public extension StoreActions {
@@ -29,6 +30,7 @@ public extension StoreActions {
     func setAutoRefresh(_ enabled: Bool) async {}
     func setReminders(_ enabled: Bool) async -> Bool { enabled }
     func installIPA(_ url: URL, progress: @escaping (Double) -> Void) async throws {}
+    func openAnisetteSettings() {}
 }
 
 public enum SubmitState: Equatable {
@@ -498,6 +500,11 @@ public final class StoreModel: ObservableObject {
         Task {
             await self.actions?.signIn()
         }
+    }
+
+    public func openAnisetteSettings() {
+        Haptics.impact(.light)
+        actions?.openAnisetteSettings()
     }
 
     public func submit(fileURL: URL, appName: String, note: String) {

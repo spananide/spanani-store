@@ -521,6 +521,29 @@ struct SettingsView: View {
                         .foregroundColor(model.account.widgetsReady ? .success : .warning)
                 }
                 .padding(16)
+
+                Rectangle()
+                    .fill(Color.paperSunk)
+                    .frame(height: 1)
+                    .padding(.horizontal, 16)
+
+                Button {
+                    model.openAnisetteSettings()
+                } label: {
+                    HStack {
+                        Text("Anisette server")
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundColor(.ink)
+
+                        Spacer()
+
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(.inkFaint)
+                    }
+                    .padding(16)
+                }
+                .buttonStyle(.plain)
             }
             .background(Color.paperRaised)
             .clipShape(RoundedRectangle(cornerRadius: SpananiRadius.tile, style: .continuous))
