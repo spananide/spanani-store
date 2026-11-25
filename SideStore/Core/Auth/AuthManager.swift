@@ -118,6 +118,35 @@ public final class AuthManager: @unchecked Sendable {
         }
     }
 
+    // Apple answers expired tokens with "Your session has expired. Please log in."
+    static func isExpiredSessionError(_ error: Error) -> Bool {
+        guard case ServerError.underlyingError(_, let message) = error else { return false }
+        return message.localizedCaseInsensitiveContains("session has expired")
+    }
+
+    // Gets a fresh token with the stored Apple ID and password (no UI), for when Apple expired the old one.
+    @discardableResult
+    public func renewSession() async throws -> ALTAppleAPISession {
+        guard let appleID = self.currentAppleID, let password = self.password else {
+            debugLog("[AuthManager] renewSession: no stored password, user must sign in.")
+            throw OperationError.notAuthenticated
+        }
+        let anisetteData = try await AnisetteProvider.fetch()
+        let xcodeVersion = await AnisetteConfigManager.shared.resolvedXcodeVersion()
+        let (_, session) = try await self.signIn(
+            appleID: appleID,
+            password: password,
+            anisetteData: anisetteData,
+            xcodeVersion: xcodeVersion,
+            verificationHandler: nil
+        )
+        self.adsid = session.dsid
+        self.xcodeToken = session.authToken
+        self.session = session
+        debugLog("[AuthManager] renewSession: got a new Apple session.")
+        return session
+    }
+
     public func getAuthenticatedTeam() async throws -> ALTTeam {
         if let team = self.team {
             return team
