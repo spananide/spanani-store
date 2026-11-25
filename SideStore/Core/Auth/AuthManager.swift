@@ -133,12 +133,17 @@ public final class AuthManager: @unchecked Sendable {
         }
         let anisetteData = try await AnisetteProvider.fetch()
         let xcodeVersion = await AnisetteConfigManager.shared.resolvedXcodeVersion()
+        // Apple may ask for a 2FA code again; show the normal code prompt instead of failing.
+        let presenter = await MainActor.run { UIApplication.shared.topViewController() }
+        let handler = SignInFlowHandler(presentingViewController: presenter)
         let (_, session) = try await self.signIn(
             appleID: appleID,
             password: password,
             anisetteData: anisetteData,
             xcodeVersion: xcodeVersion,
-            verificationHandler: nil
+            verificationHandler: { request in
+                try await handler.verificationCode(for: request)
+            }
         )
         self.adsid = session.dsid
         self.xcodeToken = session.authToken

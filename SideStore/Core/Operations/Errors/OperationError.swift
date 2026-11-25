@@ -108,7 +108,7 @@ public enum OperationError: LocalizedError, CustomNSError, Sendable, Equatable {
         case .openAppFailed(let name):
             return "spanani Store was denied permission to launch \(name)."
         case .pairingNotComplete(let reason):
-            return "Pairing erforderlich: \(reason)\n\nOhne gültige Pairing-Datei kann sich der Store nicht mit deinem Gerät verbinden. Lege die Pairing-Datei mit dem spanani Installer ab oder wähle sie in den Einstellungen aus."
+            return "Pairing required: \(reason)\n\nWithout a valid pairing file the store cannot connect to your device. Place the pairing file with the spanani Installer or pick it in Settings."
         case .pledgeInactive(let appName):
             return "Your pledge is no longer active. Please renew it to continue using \(appName) normally."
         case .SideJITIssue(let error):

@@ -23,8 +23,11 @@ enum AnisetteProvider {
             do {
                 return try await OnDeviceAnisetteManager.shared.fetchAnisetteData()
             } catch {
-                // ODA can fail (e.g. "ADI native error -45063" inside LiveContainer); the remote servers still work
-                debugLog("[AnisetteProvider] ODA failed (\(error)), falling back to remote server")
+                // ODA can fail (e.g. "ADI native error -45063" inside LiveContainer); the remote servers still work.
+                // Switch ODA off for good: clearing adi.pb on every call gave Apple a new machine each time
+                // ("session expired", "requires two-factor authentication" right after signing in).
+                debugLog("[AnisetteProvider] ODA failed (\(error)), switching to remote anisette for good")
+                UserDefaults.standard.useOnDeviceAnisette = false
                 AnisetteConfigManager.shared.anisetteAdiBlob = nil
                 return try await fetchRemote(handler: handler)
             }
