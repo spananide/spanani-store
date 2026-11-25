@@ -51,7 +51,7 @@ public enum OperationError: LocalizedError, CustomNSError, Sendable, Equatable {
         case .noInstalledApps:
             return "There are no active sideloaded apps to refresh."
         case .noSources:
-            return "There are no SideStore sources."
+            return "There are no spanani Store sources."
         case .notAuthenticated:
             return "You are not signed in."
         case .timedOut:
@@ -90,7 +90,7 @@ public enum OperationError: LocalizedError, CustomNSError, Sendable, Equatable {
         case .missingAppBundle(let reason):
             return "The app bundle could not be found: \(reason)"
         case .missingAppGroup(let name):
-            return "SideStore's shared app group “\(name)” could not be accessed."
+            return "spanani Store's shared app group “\(name)” could not be accessed."
         case .missingInfoPlist(let reason):
             return "The app's Info.plist could not be found: \(reason)"
         case .missingProvisioningProfile(let reason):
@@ -100,13 +100,13 @@ public enum OperationError: LocalizedError, CustomNSError, Sendable, Equatable {
         case .noConnection(let reason):
             return "Network Connection Error:\n\(reason)\n\nPlease connect to Wi-Fi before attempting further operations."
         case .noDevice(let reason):
-            return "SideStore is unable to reach the device endpoint:\n\(reason)\n\nPlease check your Connection Configuration in Settings."
+            return "spanani Store is unable to reach the device endpoint:\n\(reason)\n\nPlease check your Connection Configuration in Settings."
         case .noVPN(let reason):
             return "VPN Connection Error:\n\(reason)\n\nPlease make sure LocalDevVPN is connected and running properly."
         case .notReachable(let reason):
             return reason.isEmpty ? "Device is not reachable at the specified IP or Endpoint." : reason
         case .openAppFailed(let name):
-            return "SideStore was denied permission to launch \(name)."
+            return "spanani Store was denied permission to launch \(name)."
         case .pairingNotComplete(let reason):
             return "Pairing erforderlich: \(reason)\n\nOhne gültige Pairing-Datei kann sich der Store nicht mit deinem Gerät verbinden. Lege die Pairing-Datei mit dem spanani Installer ab oder wähle sie in den Einstellungen aus."
         case .pledgeInactive(let appName):
@@ -114,7 +114,7 @@ public enum OperationError: LocalizedError, CustomNSError, Sendable, Equatable {
         case .SideJITIssue(let error):
             return "An error occurred while using SideJIT: \(error)"
         case .unknownUDID(let reason):
-            return "SideStore could not determine this device's UDID: \(reason)\n\nPlease replace your pairing using iloader or idevice_pair."
+            return "spanani Store could not determine this device's UDID: \(reason)\n\nPlease replace your pairing using iloader or idevice_pair."
         }
     }
 

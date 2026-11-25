@@ -148,7 +148,7 @@ final class SpananiBridge: StoreActions {
                 category: mapCategory(app),
                 versionString: versionString,
                 sizeBytes: size,
-                sourceName: app.source?.name ?? "SideStore",
+                sourceName: app.source?.name ?? "spanani Store",
                 tint: Color(uiColor: tintColor),
                 symbol: "app.fill",
                 iconURL: app.iconURL,
