@@ -371,6 +371,27 @@ struct SettingsView: View {
                         .padding(16)
                     }
                     .buttonStyle(.plain)
+                } else {
+                    Rectangle()
+                        .fill(Color.paperSunk)
+                        .frame(height: 1)
+                        .padding(.horizontal, 16)
+
+                    Button {
+                        model.signIn()
+                    } label: {
+                        HStack {
+                            Text("Sign in")
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundColor(.brand)
+                            Spacer()
+                            Image(systemName: "person.crop.circle.badge.checkmark")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(.brand)
+                        }
+                        .padding(16)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
             .background(Color.paperRaised)

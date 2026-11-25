@@ -646,6 +646,20 @@ final class SpananiBridge: StoreActions {
         debugLog("[SpananiBridge] signOut() completed")
     }
 
+    func signIn() async {
+        debugLog("[SpananiBridge] signIn() requested")
+        do {
+            _ = try await AuthManager.shared.signIn(presentingViewController: Self.topViewController)
+            model.account.appleID = Keychain.shared.appleIDEmailAddress
+            debugLog("[SpananiBridge] signIn() completed")
+        } catch is CancellationError {
+            debugLog("[SpananiBridge] signIn() cancelled")
+        } catch {
+            debugLog("[SpananiBridge] signIn() failed: \(error)")
+            model.lastError = error.localizedDescription
+        }
+    }
+
     // MARK: - Auto-Refresh & Reminders
 
     func setAutoRefresh(_ enabled: Bool) async {

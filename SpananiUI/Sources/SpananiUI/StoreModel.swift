@@ -13,6 +13,7 @@ public protocol StoreActions: AnyObject {
     func removeSource(_ source: SourceItem) async throws
     func refreshSources() async
     func signOut() async
+    func signIn() async
     func setAutoRefresh(_ enabled: Bool) async
     func setReminders(_ enabled: Bool) async -> Bool
     func installIPA(_ url: URL, progress: @escaping (Double) -> Void) async throws
@@ -24,6 +25,7 @@ public extension StoreActions {
     func removeSource(_ source: SourceItem) async throws {}
     func refreshSources() async {}
     func signOut() async {}
+    func signIn() async {}
     func setAutoRefresh(_ enabled: Bool) async {}
     func setReminders(_ enabled: Bool) async -> Bool { enabled }
     func installIPA(_ url: URL, progress: @escaping (Double) -> Void) async throws {}
@@ -488,6 +490,13 @@ public final class StoreModel: ObservableObject {
             }
             self.account.appleID = nil
             Haptics.notify(.success)
+        }
+    }
+
+    public func signIn() {
+        Haptics.impact(.medium)
+        Task {
+            await self.actions?.signIn()
         }
     }
 
