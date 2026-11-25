@@ -265,7 +265,7 @@ final class SpananiBridge: StoreActions {
             case "social": return "Social"
             case "utilities": return "Utilities"
             case "education": return "Education"
-            default: return "Other"
+            default: return raw.isEmpty ? "Other" : raw.capitalized
             }
         }
         return "Other"
