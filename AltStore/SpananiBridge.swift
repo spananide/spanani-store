@@ -168,7 +168,8 @@ final class SpananiBridge: StoreActions {
 
         let mappedInstalled: [InstalledItem] = sortedInstalled.map { app in
             let tintColor = app.storeApp?.tintColor ?? defaultTint
-            let iconURL = app.storeApp?.iconURL
+            // the store itself has no source entry, so it had no icon in My Apps
+            let iconURL = app.storeApp?.iconURL ?? (app.bundleIdentifier == StoreApp.altstoreAppID ? AppConstants.Sources.sideStoreFallbackIconURL : nil)
 
             return InstalledItem(
                 id: app.bundleIdentifier,
