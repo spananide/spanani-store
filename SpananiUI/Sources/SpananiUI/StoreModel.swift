@@ -56,6 +56,21 @@ public final class StoreModel: ObservableObject {
     @Published public var ipaName: String?
     @Published public var activeLimit: Int
     @Published public var lastError: String?
+
+    /// Shows an error alert, except for cancellations (the user stopped something on purpose).
+    public func report(_ error: Error) {
+        guard !Self.isCancellation(error) else { return }
+        lastError = error.localizedDescription
+    }
+
+    public static func isCancellation(_ error: Error) -> Bool {
+        if error is CancellationError { return true }
+        let nsError = error as NSError
+        if nsError.domain == NSCocoaErrorDomain && nsError.code == NSUserCancelledError { return true }
+        if nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled { return true }
+        // a CancellationError that went through NSError bridging
+        return nsError.domain == "Swift.CancellationError"
+    }
     @Published public var submitState: SubmitState = .idle
 
     private static let submitEndpoint = URL(string: "https://store-api.spanani.de/submit")!
@@ -205,7 +220,7 @@ public final class StoreModel: ObservableObject {
                 }
                 Haptics.notify(.success)
             } catch {
-                self.lastError = error.localizedDescription
+                self.report(error)
                 Haptics.notify(.error)
             }
             self.ipaProgress = nil
@@ -256,9 +271,12 @@ public final class StoreModel: ObservableObject {
                         self.installed.append(newItem)
                     }
                     Haptics.notify(.success)
+                } catch let error where Self.isCancellation(error) {
+                    // the user stopped the download: back to "Get", no alert
+                    self.installStates.removeValue(forKey: app.id)
                 } catch {
                     self.installStates[app.id] = .failed(error.localizedDescription)
-                    self.lastError = error.localizedDescription
+                    self.report(error)
                     Haptics.notify(.error)
                 }
             } else {
@@ -304,7 +322,7 @@ public final class StoreModel: ObservableObject {
                     }
                     Haptics.notify(.success)
                 } catch {
-                    self.lastError = error.localizedDescription
+                    self.report(error)
                     Haptics.notify(.error)
                 }
             } else {
@@ -336,7 +354,7 @@ public final class StoreModel: ObservableObject {
                     self.refreshProgress = nil
                     Haptics.notify(.success)
                 } catch {
-                    self.lastError = error.localizedDescription
+                    self.report(error)
                     self.refreshProgress = nil
                     Haptics.notify(.error)
                 }
@@ -371,7 +389,7 @@ public final class StoreModel: ObservableObject {
                     }
                     Haptics.notify(.success)
                 } catch {
-                    self.lastError = error.localizedDescription
+                    self.report(error)
                     Haptics.notify(.error)
                 }
             } else {
@@ -392,7 +410,7 @@ public final class StoreModel: ObservableObject {
                     self.installed.removeAll { $0.id == item.id }
                     Haptics.notify(.success)
                 } catch {
-                    self.lastError = error.localizedDescription
+                    self.report(error)
                     Haptics.notify(.error)
                 }
             } else {
@@ -407,7 +425,7 @@ public final class StoreModel: ObservableObject {
             do {
                 try await addSourceAsync(urlString)
             } catch {
-                self.lastError = error.localizedDescription
+                self.report(error)
                 Haptics.notify(.error)
             }
         }
@@ -452,7 +470,7 @@ public final class StoreModel: ObservableObject {
                     self.sources.removeAll { $0.id == source.id }
                     Haptics.notify(.success)
                 } catch {
-                    self.lastError = error.localizedDescription
+                    self.report(error)
                     Haptics.notify(.error)
                 }
             } else {

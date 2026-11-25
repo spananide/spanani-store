@@ -656,7 +656,7 @@ final class SpananiBridge: StoreActions {
             debugLog("[SpananiBridge] signIn() cancelled")
         } catch {
             debugLog("[SpananiBridge] signIn() failed: \(error)")
-            model.lastError = error.localizedDescription
+            model.report(error)
         }
     }
 
