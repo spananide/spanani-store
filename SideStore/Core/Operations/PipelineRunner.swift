@@ -313,6 +313,19 @@ final class PipelineRunner: Sendable
     private func performPipeline(for operation: AppOperation, handler: PipelineExecutionHandler, group: RefreshGroup, operationsCount: Int = 1) async throws -> InstalledApp
     {
         let pipelineSteps = PipelineStepDefinition.steps(for: operation)
+
+        // A skipped or revoked certificate step leaves no signing certificate; create one now
+        // instead of failing every install with "Active certificate is missing".
+        var activeCertificate = CertificateManager.shared.activeCertificate?.certificate
+        if activeCertificate == nil, AuthManager.shared.isAuthenticated {
+            debugLog("[AppManager] performPipeline: no active certificate, provisioning one")
+            let presenter = await MainActor.run { UIApplication.shared.topViewController() }
+            let certificateHandler = SignInFlowHandler(presentingViewController: presenter)
+            let team = try await AuthManager.shared.getAuthenticatedTeam()
+            activeCertificate = try await CertificateProvisioningFlow(handler: certificateHandler).resolveCertificate(for: team)
+            withExtendedLifetime(certificateHandler) {}
+        }
+
         let context = InstallAppOperationContext(
             pipelineSteps: pipelineSteps,
             bundleIdentifier: operation.bundleIdentifier,
@@ -320,7 +333,7 @@ final class PipelineRunner: Sendable
             sharedContext: group.sharedContext,
             handler: handler,
             additionalEntitlements: defaultEntitlements,
-            activeSigningCertificate: CertificateManager.shared.activeCertificate?.certificate
+            activeSigningCertificate: activeCertificate
         )
         context.isCellularRefreshGroup = group.isCellularRefreshGroup
         context.groupOperationsCount = operationsCount
