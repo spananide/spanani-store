@@ -265,7 +265,7 @@
       "name": "iPadn",
       "bundleIdentifier": "app.local.iPadn",
       "developerName": "spanani.de",
-      "subtitle": "From spanani.de",
+      "subtitle": "Search, download and install the apps you own on iPhone and iPad",
       "localizedDescription": "Search, download and install the apps you own on iPhone and iPad",
       "iconURL": "https://raw.githubusercontent.com/spananide/spanani-store/develop/source/icons/app.local.iPadn.png",
       "tintColor": "F9F9FC",
